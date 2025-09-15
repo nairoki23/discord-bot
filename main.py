@@ -1,28 +1,29 @@
-from dotenv import load_dotenv
-import os
+from dotenv import dotenv_values
 import discord
 from discord.ext import commands
 
 # .env読み込み
-load_dotenv()
-
+config = dotenv_values(".env")
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
-
-@bot.event
-async def on_ready():
-    print(f"Logged in as {bot.user.name}.")
-    await bot.tree.sync()
-    print("Synced slash commands.")
 
 # Cogを読み込む
 async def load_extensions():
     await bot.load_extension("cogs.ping")
+    await bot.load_extension("cogs.data_usage")
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user.name}.")
+    await load_extensions()
+    await bot.tree.sync()
+    guild = discord.Object(id=config.get("TEST_GUILD"))
+    await bot.tree.sync(guild=guild)
+    print("Synced slash commands.")
 
 async def main():
     async with bot:
-        await load_extensions()
-        await bot.start(os.getenv("DISCORD_TOKEN"))
+        await bot.start(config.get("DISCORD_TOKEN"))
 
 import asyncio
 asyncio.run(main())
