@@ -1,6 +1,7 @@
 import requests				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 import json
+import utils
 #魔法のHeaders
 headers = {
     "accept": "application/json, text/plain, */*",
@@ -42,7 +43,16 @@ def songList(word):
     r=s.post(URL,data=data,headers=headers)
     data_dict = r.json()
     #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
-    return data_dict["contentsList"]
+    res=[]
+    for song in data_dict["contentsList"]:
+        res.append(utils.RawSong(
+            title=song["songName"],
+            artist=song["artistName"],
+            url="https://www.joysound.com/web/search/song/"+song["naviGroupId"],
+            brand=2
+        ))
+        
+    return res
 
 def artistList(word):
     data = {
@@ -84,4 +94,4 @@ def artistInfo(word):
 
 
 if __name__ == "__main__":
-    print(json.dumps(joy_artistInfo("401003"), indent=2, ensure_ascii=False))
+    print(json.dumps(songList(input()), indent=2, ensure_ascii=False))

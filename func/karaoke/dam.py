@@ -1,6 +1,7 @@
 import json
 import requests
 from bs4 import BeautifulSoup as bs
+import utils
 headers = {
     "accept": "application/json, text/javascript, */*; q=0.01",
     "content-type": "application/json",
@@ -40,12 +41,12 @@ def artistList():
     data_dict = response.json()
     print(json.dumps(data_dict, indent=2, ensure_ascii=False))
 
-def songList():
+def songList(word):
     #https://www.clubdam.com/dkwebsys/search-api/SearchMusicByKeywordApi
     data={
         "modelTypeCode":"1",
         "serialNo":"BA000001",
-        "keyword":"理芽",
+        "keyword":word,
         "compId":"1",
         "authKey":"2/Qb9R@8s*",
         "sort":"2",
@@ -55,7 +56,16 @@ def songList():
     response = requests.post(URL+"SearchMusicByKeywordApi", headers=headers, json=data)
     # JSON を辞書に変換してインデント付きで表示
     data_dict = response.json()
-    print(json.dumps(data_dict, indent=2, ensure_ascii=False))
+    res=[]
+    for song in data_dict["list"]:
+        res.append(utils.RawSong(
+            title=song["title"],
+            artist=song["artist"],
+            url="https://www.clubdam.com/karaokesearch/songleaf.html?requestNo="+song["requestNo"],
+            brand=1
+        )
+    )
+    return res
 
 def artistInfo():
     #https://www.clubdam.com/dkwebsys/search-api/GetMusicListByArtistApi
@@ -63,9 +73,6 @@ def artistInfo():
         "modelTypeCode":"1",
         "serialNo":"BA000001",
         "artistCode":"150623",
-        #"contentsCode":null,
-        #"damTomoMovieFlag":null,
-        #"damTomoRecordingFlag":null,
         "compId":"1",
         "authKey":"2/Qb9R@8s*",
         "sort":"1",
@@ -79,4 +86,4 @@ def artistInfo():
     print(json.dumps(data_dict, indent=2, ensure_ascii=False))
 
 if __name__ == "__main__":
-    dam_artistInfo()
+    songList(input())
