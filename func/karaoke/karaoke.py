@@ -26,6 +26,64 @@ def is_NG(title:str) ->str:
             return 1
     return 0
 
+def merge_songs(dam_list: List[utils.RawSong], joy_list: List[utils.RawSong]) -> List[utils.Song]:
+    result = []
+    used_dam = set()
+    used_joy = set()
+
+    # 全組み合わせで比較
+    for i, dam_song in enumerate(dam_list):
+        dam_title = feat_process(dam_song.title)
+        dam_artist = feat_process(dam_song.artist)
+        found = False
+
+        for j, joy_song in enumerate(joy_list):
+            if j in used_joy:
+                continue
+            joy_title = feat_process(joy_song.title)
+            joy_artist = feat_process(joy_song.artist)
+
+            if dam_title == joy_title and dam_artist == joy_artist:
+                # 一致したので Song を作成
+                result.append(utils.Song(
+                    title=dam_title,
+                    artist=dam_artist,
+                    damUrl=dam_song.url,
+                    joyUrl=joy_song.url,
+                    exif={**dam_song.exif, **joy_song.exif}  # exif を統合
+                ))
+                used_dam.add(i)
+                used_joy.add(j)
+                found = True
+                break
+
+        if not found:
+            # dam_list 単独
+            result.append(utils.Song(
+                title=dam_title,
+                artist=dam_artist,
+                damUrl=dam_song.url,
+                exif=dam_song.exif.copy()
+            ))
+            used_dam.add(i)
+
+    # joy_list に残った単独の曲
+    for j, joy_song in enumerate(joy_list):
+        if j not in used_joy:
+            joy_title = feat_process(joy_song.title)
+            joy_artist = feat_process(joy_song.artist)
+            result.append(utils.Song(
+                title=joy_title,
+                artist=joy_artist,
+                joyUrl=joy_song.url,
+                exif=joy_song.exif.copy()
+            ))
+
+    return result
+
+
+
+
 def songMargeAndContinue(j_raw_list,d_raw_list):
     res=[]
     for _ in range(len(j_raw_list)):
@@ -87,8 +145,7 @@ def merge_artists(raw_list: List[utils.RawArtist]) -> List[utils.Artist]:
 def find_song(name):
     j_raw_list=joy.songList(name)
     d_raw_list=dam.songList(name)
-    print(j_raw_list)
-    return songMargeAndContinue(j_raw_list,d_raw_list)
+    return songMargeAndContinue(d_raw_list,j_raw_list)
 
 
 def find_artist_song(name):
@@ -104,9 +161,7 @@ def find_artist_song(name):
             continue
         for c in a.code:
             d_song+=dam.artistInfo(c)
-    print(j_song)
-    exit()
-    return songMargeAndContinue(j_song,d_song)
+    return merge_songs(d_song,j_song)
     
 まるばつ={True:"◯",False:"✕"}
 
