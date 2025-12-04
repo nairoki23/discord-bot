@@ -20,6 +20,22 @@ class Song:
     joyUrl:str=""
     exif:dict = field(default_factory=dict)
 
+@dataclass
+class RawArtist:
+    artist:str
+    code:int
+    brand:Brand
+    exif:dict = field(default_factory=dict)
+
+@dataclass
+class Artist:
+    artist:str
+    brand:Brand
+    code:list=field(default_factory=list)
+    exif:dict = field(default_factory=dict)
+
+
+
 
 def hira_to_kata(text: str) -> str:
     """

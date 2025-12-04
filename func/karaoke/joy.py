@@ -60,7 +60,7 @@ def artistList(word):
         "kindCnt": "1",
         "kind1": "artist",
         "word1": word,
-        "match1": "partial",
+        "match1": "front",
         "start": "1",
         "count": "20",
         "sort": "popular",
@@ -71,7 +71,15 @@ def artistList(word):
     r=s.post(URL,data=data,headers=headers)
     data_dict = r.json()
     #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
-    return data_dict["artistList"]
+    res=[]
+    for a in data_dict["artistList"]:
+        res.append(utils.RawArtist(
+            artist=a["artistName"],
+            code=a["artistId"],
+            brand=2,
+            exif={}
+        ))
+    return res
 
 def artistInfo(word):
     data = {
@@ -81,7 +89,7 @@ def artistInfo(word):
         "word1": word,
         "match1": "exact",
         "start": "1",
-        "count": "20",
+#        "count": "20",
         "sort": "popular",
         "order": "desc",
         "apiVer": "1.0"
@@ -89,9 +97,16 @@ def artistInfo(word):
 
     r=s.post(URL,data=data,headers=headers)
     data_dict = r.json()
-    #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
-    return data_dict
+    res=[]
+    for song in data_dict["contentsList"]:
+        res.append(utils.RawSong(
+            title=song["songName"],
+            artist=song["artistName"],
+            url="https://www.joysound.com/web/search/song/"+song["naviGroupId"],
+            brand=2
+        ))
+    return res
 
 
 if __name__ == "__main__":
-    print(json.dumps(songList(input()), indent=2, ensure_ascii=False))
+    print(json.dumps(artistInfo(input()), indent=2, ensure_ascii=False))

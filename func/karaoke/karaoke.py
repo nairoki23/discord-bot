@@ -2,7 +2,7 @@ import dam
 import joy
 import utils
 import re
-from itertools import permutations
+from typing import List
 
 
 def feat_process(title: str) -> str:
@@ -20,15 +20,13 @@ def feat_process(title: str) -> str:
     return title
 
 def is_NG(title:str) ->str:
-    NG=("[サビカラ]")
+    NG=("[サビカラ]","TV-Size","[生音]")
     for n in NG:
         if n in title:
             return 1
     return 0
 
-def find_song(name):
-    j_raw_list=joy.songList(name)
-    d_raw_list=dam.songList(name)
+def songMargeAndContinue(j_raw_list,d_raw_list):
     res=[]
     for _ in range(len(j_raw_list)):
         j_raw=j_raw_list.pop()
@@ -64,9 +62,55 @@ def find_song(name):
             damUrl=a.url))
     return res
 
+def merge_artists(raw_list: List[utils.RawArtist]) -> List[utils.Artist]:
+    """
+    RawArtist のリストをまとめて Artist のリストにする
+    """
+    processed_map = {}  # feat_process した名前 → Artist
+    for raw in raw_list:
+        processed_name = feat_process(raw.artist)
+        if processed_name not in processed_map:
+            # 新規に Artist を作成
+            processed_map[processed_name] = utils.Artist(
+                artist=processed_name,
+                code=[raw.code],
+                brand=raw.brand,
+                exif=raw.exif.copy()
+            )
+        else:
+            # 既存の Artist に code を追加
+            processed_map[processed_name].code.append(raw.code)
 
+    return list(processed_map.values())
+
+
+def find_song(name):
+    j_raw_list=joy.songList(name)
+    d_raw_list=dam.songList(name)
+    print(j_raw_list)
+    return songMargeAndContinue(j_raw_list,d_raw_list)
+
+
+def find_artist_song(name):
+    j_song=[]
+    d_song=[]
+    for a in merge_artists(joy.artistList(name)):
+        if a.artist!=name:
+            continue
+        for c in a.code:
+            j_song+=joy.artistInfo(c)
+    for a in merge_artists(dam.artistList(name)):
+        if a.artist!=name:
+            continue
+        for c in a.code:
+            d_song+=dam.artistInfo(c)
+    print(j_song)
+    exit()
+    return songMargeAndContinue(j_song,d_song)
+    
+まるばつ={True:"◯",False:"✕"}
 
 
 if __name__=="__main__":
-    for s in find_song(input()):
-        print(s.title+"|"+s.artist+"\t"+s.damUrl+"|"+s.joyUrl)
+    for s in find_artist_song(input()):
+        print(s.title+"|"+s.artist+"\t"+まるばつ[s.damUrl!=""]+"|"+まるばつ[s.joyUrl!=""])
