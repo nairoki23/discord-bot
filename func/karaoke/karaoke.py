@@ -12,6 +12,7 @@ def feat_process(title: str) -> str:
     - 曲名内の連続する空白も 1 つにまとめる
     """
     # 'feat.' 以降を削除（大文字・小文字対応）
+    title = title.replace("!", "！")
     title = re.split(r"\s*feat\..*", title, flags=re.IGNORECASE)[0]
     
     # 前後の空白削除 & 連続する空白を 1 つにまとめる
