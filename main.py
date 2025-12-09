@@ -13,6 +13,7 @@ async def load_extensions():
     await bot.load_extension("cogs.data_usage")
     await bot.load_extension("cogs.timer")
     await bot.load_extension("cogs.spending")
+    await bot.load_extension("cogs.tracking")
 
 @bot.event
 async def on_ready():
