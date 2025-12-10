@@ -19,7 +19,7 @@ async def on_ready():
     print(f"Logged in as {bot.user.name}.")
     await load_extensions()
     await bot.tree.sync()
-    guild = discord.Object(id=config.get("TEST_GUILD"))
+    guild = discord.Object(id=int(config.get("TEST_GUILD")))
     await bot.tree.sync(guild=guild)
     print("Synced slash commands.")
 
