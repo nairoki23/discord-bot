@@ -18,7 +18,7 @@ class Pack:
     brand:Brand
     num:str
     state_title:str
-    state_summary:str
+    state_summary:str=""
     state_note:str=""
     type:str=""
     name:str=""
