@@ -31,7 +31,7 @@ def artistList(word):
         "compId": "1",
         "authKey": "2/Qb9R@8s*",
         "sort": "2",
-        "dispCount": "100",
+        "dispCount": "1000",
         "pageNo": "1"
     }
     # POST リクエスト
@@ -59,7 +59,7 @@ def songList(word):
         "compId":"1",
         "authKey":"2/Qb9R@8s*",
         "sort":"2",
-        "dispCount":"100",
+        "dispCount":"1000",
         "pageNo":"1"
     }
     response = requests.post(URL+"SearchMusicByKeywordApi", headers=headers, json=data)

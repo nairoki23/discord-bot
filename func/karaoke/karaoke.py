@@ -3,7 +3,7 @@ import joy
 import utils
 import re
 from typing import List
-
+import time
 
 def feat_process(title: str) -> str:
     """
@@ -156,11 +156,13 @@ def find_artist_song(name):
         if a.artist!=name:
             continue
         for c in a.code:
+            time.sleep(0.5)
             j_song+=joy.artistInfo(c)
     for a in merge_artists(dam.artistList(name)):
         if a.artist!=name:
             continue
         for c in a.code:
+            time.sleep(0.5)
             d_song+=dam.artistInfo(c)
     return merge_songs(d_song,j_song)
     
