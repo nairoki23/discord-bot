@@ -137,18 +137,29 @@ def merge_artists(raw_list: List[utils.RawArtist]) -> List[utils.Artist]:
         parts = [feat_process(p) for p in parts if p]
         if not parts:
             continue
+        
         key = tuple(sorted(parts))
         artists_list = list(key)
         if key not in processed_map:
-            processed_map[key] = utils.Artist(
-                artists=artists_list,
-                code=[raw.code],
-                brand=raw.brand,
-                exif=raw.exif.copy()
-            )
+            if raw.brand == utils.Brand.DAM:
+                processed_map[key] = utils.Artist(
+                    artists=artists_list,
+                    damCode=[raw.code],
+                    joyCode=[],
+                    exif=raw.exif.copy()
+                )
+            else:
+                processed_map[key] = utils.Artist(
+                    artists=artists_list,
+                    damCode=[],
+                    joyCode=[raw.code],
+                    exif=raw.exif.copy()
+                )
         else:
-            processed_map[key].code.append(raw.code)
-
+            if raw.brand == utils.Brand.DAM:
+                processed_map[key].damCode.append(raw.code)
+            else:
+                processed_map[key].joyCode.append(raw.code)
     return list(processed_map.values())
 
 
@@ -160,18 +171,19 @@ def find_song(name):
 
 def find_artist_song(name):
     search_key = feat_process(name)
-    joy_artists = merge_artists(joy.artistList(name))
-    dam_artists = merge_artists(dam.artistList(name))
+    joy_raw = joy.artistList(name)
+    dam_raw = dam.artistList(name)
+    all_raw = joy_raw + dam_raw
+    artists = merge_artists(all_raw)
 
-    j_codes =  []
+    j_codes = []
     d_codes = []
-    for a in joy_artists:
+    print([name.artists for name in artists])
+    exit()
+    for a in artists:
         if search_key in a.artists:
-            j_codes.append(a.code)
-    for a in dam_artists:
-        if search_key in a.artists:
-            d_codes.append(a.code)
-
+            j_codes.extend(a.joyCode)
+            d_codes.extend(a.damCode)
     j_songs = []
     d_songs = []
     for c in j_codes:

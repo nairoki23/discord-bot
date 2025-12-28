@@ -31,8 +31,8 @@ class RawArtist:
 @dataclass
 class Artist:
     artists: List[str]
-    brand:Brand
-    code:list=field(default_factory=list)
+    damCode:list=field(default_factory=list)
+    joyCode:list=field(default_factory=list)
     exif:dict = field(default_factory=dict)
 
 

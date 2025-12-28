@@ -81,7 +81,8 @@ def artistList(word):
         ))
     return res
 
-def artistInfo(word):
+def artistInfo(word: str|utils.Artist):
+
     data = {
         "format": "all",
         "kindCnt": "1",
