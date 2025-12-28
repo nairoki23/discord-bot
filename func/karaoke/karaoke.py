@@ -125,20 +125,29 @@ def merge_artists(raw_list: List[utils.RawArtist]) -> List[utils.Artist]:
     """
     RawArtist のリストをまとめて Artist のリストにする
     """
-    processed_map = {}  # feat_process した名前 → Artist
+    # 区切り文字の配列（必要に応じて追加してください）
+    separators = ["&", "／", "/", "、", "・", "＋", "+", "と", ",", "×", "x", " and ", "feat", "-"]
+    pattern = "|".join([re.escape(s) for s in separators])
+
+    # キーは分割後のアーティスト名集合（ソートしたタプル）にすることで順序差を吸収
+    processed_map = {}  # key: tuple(sorted(parts)) -> utils.Artist
+
     for raw in raw_list:
-        processed_name = feat_process(raw.artist)
-        if processed_name not in processed_map:
-            # 新規に Artist を作成
-            processed_map[processed_name] = utils.Artist(
-                artist=processed_name,
+        parts = [p.strip() for p in re.split(pattern, raw.artist, flags=re.IGNORECASE)]
+        parts = [feat_process(p) for p in parts if p]
+        if not parts:
+            continue
+        key = tuple(sorted(parts))
+        artists_list = list(key)
+        if key not in processed_map:
+            processed_map[key] = utils.Artist(
+                artists=artists_list,
                 code=[raw.code],
                 brand=raw.brand,
                 exif=raw.exif.copy()
             )
         else:
-            # 既存の Artist に code を追加
-            processed_map[processed_name].code.append(raw.code)
+            processed_map[key].code.append(raw.code)
 
     return list(processed_map.values())
 
@@ -150,21 +159,32 @@ def find_song(name):
 
 
 def find_artist_song(name):
-    j_song=[]
-    d_song=[]
-    for a in merge_artists(joy.artistList(name)):
-        if a.artist!=name:
-            continue
-        for c in a.code:
-            time.sleep(0.5)
-            j_song+=joy.artistInfo(c)
-    for a in merge_artists(dam.artistList(name)):
-        if a.artist!=name:
-            continue
-        for c in a.code:
-            time.sleep(0.5)
-            d_song+=dam.artistInfo(c)
-    return merge_songs(d_song,j_song)
+    search_key = feat_process(name)
+    joy_artists = merge_artists(joy.artistList(name))
+    dam_artists = merge_artists(dam.artistList(name))
+
+    j_codes =  []
+    d_codes = []
+    for a in joy_artists:
+        if search_key in a.artists:
+            j_codes.append(a.code)
+    for a in dam_artists:
+        if search_key in a.artists:
+            d_codes.append(a.code)
+
+    j_songs = []
+    d_songs = []
+    for c in j_codes:
+        time.sleep(0.5)
+        j_songs += joy.artistInfo(c)
+
+    for c in d_codes:
+        time.sleep(0.5)
+        d_songs += dam.artistInfo(c)
+
+    # merge_songs は DAM, JOY のリストを受け取る
+    
+    return merge_songs(d_songs, j_songs)
     
 まるばつ={True:"◯",False:"✕"}
 
