@@ -1,5 +1,6 @@
 from dataclasses import dataclass,field
 from enum import IntEnum
+from typing import List
 class Brand(IntEnum):
     DAM=1
     JOY=2
@@ -29,9 +30,15 @@ class RawArtist:
 
 @dataclass
 class Artist:
+<<<<<<< HEAD
     artist:str
     brand:Brand
     code:list = field(default_factory=list)
+=======
+    artists: List[str]
+    damCode:list=field(default_factory=list)
+    joyCode:list=field(default_factory=list)
+>>>>>>> origin/feat/karaoke
     exif:dict = field(default_factory=dict)
 
 
