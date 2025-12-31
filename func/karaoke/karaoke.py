@@ -20,6 +20,8 @@ def feat_process(title: str) -> str:
     
     return title
 
+
+
 def is_NG(title:str) ->str:
     NG=("[サビカラ]","TV-Size","[生音]")
     for n in NG:

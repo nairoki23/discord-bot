@@ -1,7 +1,7 @@
 import requests				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 import json
-import song as s
+from song import RawSong
 import artist
 #魔法のHeaders
 headers = {
@@ -46,7 +46,7 @@ def songList(word):
     #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
     res=[]
     for song in data_dict["contentsList"]:
-        res.append(s.RawSong(
+        res.append(RawSong(
             title=song["songName"],
             artist=song["artistName"],
             url="https://www.joysound.com/web/search/song/"+song["naviGroupId"],
@@ -55,36 +55,7 @@ def songList(word):
         
     return res
 
-def artistList(word):
-    data = {
-        "format": "artist",
-        "kindCnt": "1",
-        "kind1": "artist",
-        "word1": word,
-        "match1": "front",
-        "start": "1",
-        "count": "20",
-        "sort": "popular",
-        "order": "desc",
-        "apiVer": "1.0"
-    }
-
-    r=s.post(URL,data=data,headers=headers)
-    data_dict = r.json()
-    #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
-    def getSongCb() -> any:
-        pass
-    return [artist.RawArtist(
-        artist=a["artistName"],
-        code=a["artistId"],
-        brand=2,
-        getSong=getSongCb,
-        url=""
-        exif={}
-        ) for a in data_dict["artistList"]]
-
-def artistInfo(word: str|song.Artist):
-
+def artistInfo(word: str):
     data = {
         "format": "all",
         "kindCnt": "1",
@@ -109,6 +80,41 @@ def artistInfo(word: str|song.Artist):
             brand=2
         ))
     return res
+
+
+def artistSearch(word):
+    data = {
+        "format": "artist",
+        "kindCnt": "1",
+        "kind1": "artist",
+        "word1": word,
+        "match1": "front",
+        "start": "1",
+        "count": "20",
+        "sort": "popular",
+        "order": "desc",
+        "apiVer": "1.0"
+    }
+
+    r=s.post(URL,data=data,headers=headers)
+    data_dict = r.json()
+    #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
+    res=[]
+    for a in data_dict["artistList"]:
+        def getSongCb() -> RawSong:
+            return artistInfo(a["artistName"])
+        res.append(artist.RawArtist(
+            artist=a["artistName"],
+            code=a["artistId"],
+            brand=2,
+            getSong=getSongCb,
+            url="",
+            exif={}
+            )
+        )
+    return res
+
+
 
 
 if __name__ == "__main__":

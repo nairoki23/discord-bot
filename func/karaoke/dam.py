@@ -1,7 +1,7 @@
 import json
 import requests
 from bs4 import BeautifulSoup as bs
-import song as s
+from song import RawSong
 import artist
 headers = {
     "accept": "application/json, text/javascript, */*; q=0.01",
@@ -21,63 +21,6 @@ data = {
     "pageNo": "1"
 }
 """
-
-def artistList(word):
-    #https://www.clubdam.com/dkwebsys/search-api/SearchArtistByKeywordApi
-    # fetch の body を Python の辞書に変換
-    data = {
-        "modelTypeCode": "1",
-        "serialNo": "BA000001",
-        "keyword": word,
-        "compId": "1",
-        "authKey": "2/Qb9R@8s*",
-        "sort": "2",
-        "dispCount": "1000",
-        "pageNo": "1"
-    }
-    # POST リクエスト
-    response = requests.post(URL+"SearchArtistByKeywordApi", headers=headers, json=data)
-
-    # JSON を辞書に変換してインデント付きで表示
-    data_dict = response.json()
-    def getSongCb() -> any:
-        pass
-    return [
-        artist.RawArtist(
-            artist=a["artist"],
-            code=a["artistCode"],
-            brand=1,
-            getSong=getSongCb,
-            url="https://www.clubdam.com/karaokesearch/artistleaf.html?artistCode="+a["artistCode"],
-            exif={}
-    ) for a in data_dict["list"]]
-
-def songList(word):
-    #https://www.clubdam.com/dkwebsys/search-api/SearchMusicByKeywordApi
-    data={
-        "modelTypeCode":"1",
-        "serialNo":"BA000001",
-        "keyword":word,
-        "compId":"1",
-        "authKey":"2/Qb9R@8s*",
-        "sort":"2",
-        "dispCount":"1000",
-        "pageNo":"1"
-    }
-    response = requests.post(URL+"SearchMusicByKeywordApi", headers=headers, json=data)
-    # JSON を辞書に変換してインデント付きで表示
-    data_dict = response.json()
-    res=[]
-    for song in data_dict["list"]:
-        res.append(s.RawSong(
-            title=song["title"],
-            artist=song["artist"],
-            url="https://www.clubdam.com/karaokesearch/songleaf.html?requestNo="+song["requestNo"],
-            brand=1
-        )
-    )
-    return res
-
 def artistInfo(word):
     #https://www.clubdam.com/dkwebsys/search-api/GetMusicListByArtistApi
     data={
@@ -96,7 +39,7 @@ def artistInfo(word):
     data_dict = response.json()
     res=[]
     for song in data_dict["list"]:
-        res.append(s.RawSong(
+        res.append(RawSong(
             title=song["title"],
             artist=song["artist"],
             url="https://www.clubdam.com/karaokesearch/songleaf.html?requestNo="+song["requestNo"],
@@ -105,6 +48,68 @@ def artistInfo(word):
     )
     return res
     print(json.dumps(data_dict, indent=2, ensure_ascii=False))
+
+
+def artistSearch(word):
+    #https://www.clubdam.com/dkwebsys/search-api/SearchArtistByKeywordApi
+    # fetch の body を Python の辞書に変換
+    data = {
+        "modelTypeCode": "1",
+        "serialNo": "BA000001",
+        "keyword": word,
+        "compId": "1",
+        "authKey": "2/Qb9R@8s*",
+        "sort": "2",
+        "dispCount": "1000",
+        "pageNo": "1"
+    }
+    # POST リクエスト
+    response = requests.post(URL+"SearchArtistByKeywordApi", headers=headers, json=data)
+
+    # JSON を辞書に変換してインデント付きで表示
+    data_dict = response.json()
+    res=[]
+    for a in data_dict["list"]:
+        def getSongCb() -> RawSong:
+            return artistInfo(a["artistCode"])
+        res.append(artist.RawArtist(
+            artist=a["artist"],
+            code=a["artistCode"],
+            brand=1,
+            getSong=getSongCb,
+            url="https://www.clubdam.com/karaokesearch/artistleaf.html?artistCode="+str(a["artistCode"]),
+            exif={}
+            )
+        )
+    return res
+
+def songList(word):
+    #https://www.clubdam.com/dkwebsys/search-api/SearchMusicByKeywordApi
+    data={
+        "modelTypeCode":"1",
+        "serialNo":"BA000001",
+        "keyword":word,
+        "compId":"1",
+        "authKey":"2/Qb9R@8s*",
+        "sort":"2",
+        "dispCount":"1000",
+        "pageNo":"1"
+    }
+    response = requests.post(URL+"SearchMusicByKeywordApi", headers=headers, json=data)
+    # JSON を辞書に変換してインデント付きで表示
+    data_dict = response.json()
+    res=[]
+    for song in data_dict["list"]:
+        res.append(RawSong(
+            title=song["title"],
+            artist=song["artist"],
+            url="https://www.clubdam.com/karaokesearch/songleaf.html?requestNo="+song["requestNo"],
+            brand=1
+        )
+    )
+    return res
+
+
 
 if __name__ == "__main__":
     artistInfo(input())

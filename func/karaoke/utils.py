@@ -1,5 +1,22 @@
-:ffrom enum import IntEnum
+from enum import IntEnum
 from typing import List
+from dataclasses import dataclass,field
+import re
+def t_process(title: str) -> str:
+    """
+    - 'feat.' 以降を削除
+    - 前後の空白を削除
+    - 曲名内の連続する空白も 1 つにまとめる
+    """
+    # 'feat.' 以降を削除（大文字・小文字対応）
+    title = title.replace("!", "！")
+    title = re.split(r"\s*feat\..*", title, flags=re.IGNORECASE)[0]
+    
+    # 前後の空白削除 & 連続する空白を 1 つにまとめる
+    title = re.sub(r"\s+", " ", title.strip())
+    
+    return title
+
 class Brand(IntEnum):
     DAM=1
     JOY=2
