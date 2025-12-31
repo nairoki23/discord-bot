@@ -1,5 +1,4 @@
-from dataclasses import dataclass,field
-from enum import IntEnum
+:ffrom enum import IntEnum
 from typing import List
 class Brand(IntEnum):
     DAM=1

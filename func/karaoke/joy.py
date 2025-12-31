@@ -1,7 +1,8 @@
 import requests				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 import json
-import utils
+import song as s
+import artist
 #魔法のHeaders
 headers = {
     "accept": "application/json, text/plain, */*",
@@ -45,7 +46,7 @@ def songList(word):
     #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
     res=[]
     for song in data_dict["contentsList"]:
-        res.append(utils.RawSong(
+        res.append(s.RawSong(
             title=song["songName"],
             artist=song["artistName"],
             url="https://www.joysound.com/web/search/song/"+song["naviGroupId"],
@@ -71,17 +72,18 @@ def artistList(word):
     r=s.post(URL,data=data,headers=headers)
     data_dict = r.json()
     #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
-    res=[]
-    for a in data_dict["artistList"]:
-        res.append(utils.RawArtist(
-            artist=a["artistName"],
-            code=a["artistId"],
-            brand=2,
-            exif={}
-        ))
-    return res
+    def getSongCb() -> any:
+        pass
+    return [artist.RawArtist(
+        artist=a["artistName"],
+        code=a["artistId"],
+        brand=2,
+        getSong=getSongCb,
+        url=""
+        exif={}
+        ) for a in data_dict["artistList"]]
 
-def artistInfo(word: str|utils.Artist):
+def artistInfo(word: str|song.Artist):
 
     data = {
         "format": "all",
@@ -100,7 +102,7 @@ def artistInfo(word: str|utils.Artist):
     data_dict = r.json()
     res=[]
     for song in data_dict["contentsList"]:
-        res.append(utils.RawSong(
+        res.append(s.RawSong(
             title=song["songName"],
             artist=song["artistName"],
             url="https://www.joysound.com/web/search/song/"+song["naviGroupId"],

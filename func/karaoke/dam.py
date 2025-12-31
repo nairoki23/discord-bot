@@ -1,7 +1,8 @@
 import json
 import requests
 from bs4 import BeautifulSoup as bs
-import utils
+import song as s
+import artist
 headers = {
     "accept": "application/json, text/javascript, */*; q=0.01",
     "content-type": "application/json",
@@ -39,16 +40,17 @@ def artistList(word):
 
     # JSON を辞書に変換してインデント付きで表示
     data_dict = response.json()
-    res=[]
-    for a in data_dict["list"]:
-        res.append(utils.RawArtist(
+    def getSongCb() -> any:
+        pass
+    return [
+        artist.RawArtist(
             artist=a["artist"],
             code=a["artistCode"],
             brand=1,
+            getSong=getSongCb,
+            url="https://www.clubdam.com/karaokesearch/artistleaf.html?artistCode="+a["artistCode"],
             exif={}
-        ))
-    #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
-    return res
+    ) for a in data_dict["list"]]
 
 def songList(word):
     #https://www.clubdam.com/dkwebsys/search-api/SearchMusicByKeywordApi
@@ -67,7 +69,7 @@ def songList(word):
     data_dict = response.json()
     res=[]
     for song in data_dict["list"]:
-        res.append(utils.RawSong(
+        res.append(s.RawSong(
             title=song["title"],
             artist=song["artist"],
             url="https://www.clubdam.com/karaokesearch/songleaf.html?requestNo="+song["requestNo"],
@@ -94,7 +96,7 @@ def artistInfo(word):
     data_dict = response.json()
     res=[]
     for song in data_dict["list"]:
-        res.append(utils.RawSong(
+        res.append(s.RawSong(
             title=song["title"],
             artist=song["artist"],
             url="https://www.clubdam.com/karaokesearch/songleaf.html?requestNo="+song["requestNo"],
