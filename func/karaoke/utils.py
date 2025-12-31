@@ -31,7 +31,7 @@ class RawArtist:
 class Artist:
     artist:str
     brand:Brand
-    code:list=field(default_factory=list)
+    code:list = field(default_factory=list)
     exif:dict = field(default_factory=dict)
 
 
