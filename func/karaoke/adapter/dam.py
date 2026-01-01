@@ -1,8 +1,8 @@
 import json
 import requests
 from bs4 import BeautifulSoup as bs
-from song import RawSong
-import artist
+from ArtistBase import ArtistBase 
+from songbase import SongBase
 headers = {
     "accept": "application/json, text/javascript, */*; q=0.01",
     "content-type": "application/json",
@@ -39,7 +39,7 @@ def artistInfo(word):
     data_dict = response.json()
     res=[]
     for song in data_dict["list"]:
-        res.append(RawSong(
+        res.append(SongBase(
             title=song["title"],
             artist=song["artist"],
             url="https://www.clubdam.com/karaokesearch/songleaf.html?requestNo="+song["requestNo"],
@@ -70,9 +70,9 @@ def artistSearch(word):
     data_dict = response.json()
     res=[]
     for a in data_dict["list"]:
-        def getSongCb() -> RawSong:
+        def getSongCb() -> SongBase:
             return artistInfo(a["artistCode"])
-        res.append(artist.RawArtist(
+        res.append(ArtistBase(
             artist=a["artist"],
             code=a["artistCode"],
             brand=1,
@@ -100,7 +100,7 @@ def songList(word):
     data_dict = response.json()
     res=[]
     for song in data_dict["list"]:
-        res.append(RawSong(
+        res.append(SongBase(
             title=song["title"],
             artist=song["artist"],
             url="https://www.clubdam.com/karaokesearch/songleaf.html?requestNo="+song["requestNo"],

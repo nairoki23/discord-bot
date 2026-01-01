@@ -1,8 +1,8 @@
 import requests				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 import json
-from song import RawSong
-import artist
+from ArtistBase import ArtistBase 
+from songbase import SongBase
 #魔法のHeaders
 headers = {
     "accept": "application/json, text/plain, */*",
@@ -46,7 +46,7 @@ def songList(word):
     #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
     res=[]
     for song in data_dict["contentsList"]:
-        res.append(RawSong(
+        res.append(SongBase(
             title=song["songName"],
             artist=song["artistName"],
             url="https://www.joysound.com/web/search/song/"+song["naviGroupId"],
@@ -73,7 +73,7 @@ def artistInfo(word: str):
     data_dict = r.json()
     res=[]
     for song in data_dict["contentsList"]:
-        res.append(s.RawSong(
+        res.append(SongBase(
             title=song["songName"],
             artist=song["artistName"],
             url="https://www.joysound.com/web/search/song/"+song["naviGroupId"],
@@ -103,7 +103,7 @@ def artistSearch(word):
     for a in data_dict["artistList"]:
         def getSongCb() -> RawSong:
             return artistInfo(a["artistName"])
-        res.append(artist.RawArtist(
+        res.append(ArtistBase(
             artist=a["artistName"],
             code=a["artistId"],
             brand=2,
