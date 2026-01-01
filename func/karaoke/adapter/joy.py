@@ -1,8 +1,9 @@
 import requests				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 import json
-from ArtistBase import ArtistBase 
-from songbase import SongBase
+from func.karaoke.adapter.artistbase import ArtistBase 
+from func.karaoke.adapter.songbase import SongBase
+import time
 #魔法のHeaders
 headers = {
     "accept": "application/json, text/plain, */*",
@@ -101,8 +102,10 @@ def artistSearch(word):
     #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
     res=[]
     for a in data_dict["artistList"]:
-        def getSongCb() -> RawSong:
-            return artistInfo(a["artistName"])
+        artist_id = a["artistId"]
+        def getSongCb(code=artist_id) -> list[SongBase]:
+            time.sleep(0.5)
+            return artistInfo(code)
         res.append(ArtistBase(
             artist=a["artistName"],
             code=a["artistId"],
@@ -113,9 +116,6 @@ def artistSearch(word):
             )
         )
     return res
-
-
-
 
 if __name__ == "__main__":
     print(json.dumps(artistInfo(input()), indent=2, ensure_ascii=False))

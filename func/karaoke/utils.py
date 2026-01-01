@@ -16,11 +16,10 @@ def t_process(title: str) -> str:
     title = re.sub(r"\s+", " ", title.strip())
     
     return title
-
+"""
 class Brand(IntEnum):
     DAM=1
     JOY=2
-
 @dataclass
 class RawSong:
     title:str
@@ -50,7 +49,7 @@ class Artist:
     damCode:list=field(default_factory=list)
     joyCode:list=field(default_factory=list)
     exif:dict = field(default_factory=dict)
-
+"""
 
 
 

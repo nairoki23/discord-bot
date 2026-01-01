@@ -1,8 +1,9 @@
 import json
 import requests
 from bs4 import BeautifulSoup as bs
-from ArtistBase import ArtistBase 
-from songbase import SongBase
+from func.karaoke.adapter.artistbase import ArtistBase 
+from func.karaoke.adapter.songbase import SongBase
+import time
 headers = {
     "accept": "application/json, text/javascript, */*; q=0.01",
     "content-type": "application/json",
@@ -70,8 +71,10 @@ def artistSearch(word):
     data_dict = response.json()
     res=[]
     for a in data_dict["list"]:
-        def getSongCb() -> SongBase:
-            return artistInfo(a["artistCode"])
+        artist_code = a["artistCode"] 
+        def getSongCb(code=artist_code) -> list[SongBase]:
+            time.sleep(0.5)
+            return artistInfo(code)
         res.append(ArtistBase(
             artist=a["artist"],
             code=a["artistCode"],

@@ -1,10 +1,9 @@
 from dataclasses import dataclass,field
-import utils
-import Adapter
+from func.karaoke.adapter import artistbase, songbase
 @dataclass
-class Song:
+class SongData:
     title:str
-    artist:artist.Artist
-    dam:adapter.songbase.SongBase
-    joy:adapter.songbase.SongBase
+    artist:artistbase.ArtistBase
+    dam:songbase.SongBase|None = None
+    joy:songbase.SongBase|None = None
     exif:dict = field(default_factory=dict)
