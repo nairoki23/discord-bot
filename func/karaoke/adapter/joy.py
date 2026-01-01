@@ -89,7 +89,7 @@ def artistSearch(word):
         "kindCnt": "1",
         "kind1": "artist",
         "word1": word,
-        "match1": "front",
+        "match1": "partial",
         "start": "1",
         "count": "20",
         "sort": "popular",
@@ -101,6 +101,7 @@ def artistSearch(word):
     data_dict = r.json()
     #print(json.dumps(data_dict, indent=2, ensure_ascii=False))
     res=[]
+    print(data_dict["artistList"])
     for a in data_dict["artistList"]:
         artist_id = a["artistId"]
         def getSongCb(code=artist_id) -> list[SongBase]:
@@ -115,6 +116,7 @@ def artistSearch(word):
             exif={}
             )
         )
+        print(res)
     return res
 
 if __name__ == "__main__":
