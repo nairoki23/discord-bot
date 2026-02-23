@@ -4,24 +4,35 @@ from discord.ext import commands
 
 # .env読み込み
 config = dotenv_values(".env")
-intents = discord.Intents.all()
-bot = commands.Bot(command_prefix="!", intents=intents)
+class MyBot(commands.Bot):
+    def __init__(self):
+        intents = discord.Intents.all()
+        super().__init__(command_prefix="!", intents=intents)
 
-# Cogを読み込む
-async def load_extensions():
-    await bot.load_extension("cogs.ping")
-    await bot.load_extension("cogs.data_usage")
-    await bot.load_extension("cogs.timer")
-    await bot.load_extension("cogs.spending")
+    # ボット起動時に一度だけ呼ばれる準備用関数
+    async def setup_hook(self):
+        # ここでCogを読み込む
+        extensions = [
+            "cogs.ping",
+            "cogs.data_usage",
+            "cogs.timer",
+            "cogs.spending",
+            "cogs.ban" 
+        ]
+        for ext in extensions:
+            await self.load_extension(ext)
+        
+        # スラッシュコマンドの同期
+        guild = discord.Object(id=config.get("TEST_GUILD"))
+        self.tree.copy_global_to(guild=guild)
+        await self.tree.sync(guild=guild)
+        print("Cogs loaded and Tree synced.")
+
+bot = MyBot()
 
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user.name}.")
-    await load_extensions()
-    await bot.tree.sync()
-    guild = discord.Object(id=int(config.get("TEST_GUILD")))
-    await bot.tree.sync(guild=guild)
-    print("Synced slash commands.")
 
 async def main():
     async with bot:
