@@ -11,12 +11,10 @@ class Ban(commands.Cog):
         self.ng_list = []
         for s in config.get("USER").split(","):
             self.ng_list.append(int(s))
-        print(self.ng_list)
     # 共通のBANチェック処理
     async def scan_and_ban(self, guild: discord.Guild):
         # ボット自身にBAN権限があるかまず確認
         if not guild.me.guild_permissions.ban_members:
-            print(f"Bot does not have ban permissions in guild: {guild.name}")
             return
         for user_id in self.ng_list:
             member = guild.get_member(user_id)
@@ -75,5 +73,4 @@ class Ban(commands.Cog):
 
 
 async def setup(bot):
-    print("Loading Ban Cog...")
     await bot.add_cog(Ban(bot))
