@@ -16,6 +16,7 @@ class Ymobile():
         self.kurikoshi=0
         self.base=0
         self.charged=0
+        self.mileage=0
         self.usable=0
         self.used=0
         self.remaining=0
@@ -52,9 +53,10 @@ class Ymobile():
         ds=self.res.find(class_="list-toggle-content").find_all("table")
         self.kurikoshi=get_mb(ds[0].find("tbody").find("td").get_text(strip=True))
         self.base=get_mb(ds[1].find("tbody").find_all("tr")[1].find("td").get_text(strip=True))
-        self.charged=get_mb(ds[2].find("tbody").find_all("tr")[1].find("td").find(string=True,recursive=False).strip())
-        self.usable=self.kurikoshi+self.base+self.charged
-        self.used=get_mb(ds[3].find("tbody").find("tr").find("td").get_text(strip=True))
+        self.charged=get_mb(ds[3].find("tbody").find("tr").find("td").get_text(strip=True))
+        self.mileage=get_mb(ds[2].find("tbody").find_all("tr")[1].find("td").find(string=True,recursive=False).strip())
+        self.usable=self.kurikoshi+self.base+self.charged+self.mileage
+        self.used=get_mb(ds[4].find("tbody").find("tr").find("td").get_text(strip=True))
         self.remaining=self.usable-self.used
 
     def get(self):
@@ -65,4 +67,4 @@ print(__name__)
 if __name__ == "__main__":
     y=Ymobile(config.get("PHONE_NUMBER"),config.get("YMOBILE_PASSWORD"))
     y.get()
-    print("データ量残量："+str(y.remaining/1000)+"MB/"+str(y.usable/1000)+"MB")
+    print("データ量残量："+str(y.remaining/1000)+"GB/"+str(y.usable/1000)+"GB")
