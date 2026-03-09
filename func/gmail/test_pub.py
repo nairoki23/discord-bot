@@ -52,10 +52,10 @@ def get_token():
 # 起動時に認証を済ませておく
 global_creds = get_token()
 
-def get_gmail_service(creds):
+def get_gmail_service(creds):#Serviceに実装済み
     return build('gmail', 'v1', credentials=creds)
 
-def get_mail_details(service, msg_id):
+def get_mail_details(service, msg_id):#Processに実装済み
     """メッセージIDから送信元、件名、本文を取得"""
     try:
         message = service.users().messages().get(userId='me', id=msg_id, format='full').execute()
@@ -86,15 +86,15 @@ def get_mail_details(service, msg_id):
 HISTORY_DB=[]
 processed_msg_ids = set()
 
-def get_last_history_id():
+def get_last_history_id():#Processに実装済み
     if len(HISTORY_DB) > 0:
             return HISTORY_DB[-1]
     return None
 
-def save_history_id(history_id):
+def save_history_id(history_id):#Processに実装済み
     HISTORY_DB.append(history_id)
 
-def callback(message):
+def callback(message):#Processに実装済み
     try:
         data = json.loads(message.data.decode("utf-8"))
         new_history_id = data.get("historyId")
@@ -144,7 +144,7 @@ def callback(message):
         print(f"Callback Error: {e}")
         message.ack()
 
-def process_mail(details):
+def process_mail(details):#Processに実装済み
     print(f"\n--- 新着メール受信 ---")
     print(f"From: {details['from']}")
     print(f"Subject: {details['subject']}")
@@ -154,7 +154,7 @@ def process_mail(details):
     # if amount_match:
     #     print(f"金額検知: {amount_match.group(1)}円")
 
-def start_listening(): 
+def start_listening(): #Serviceに実装済み
     subscriber = pubsub_v1.SubscriberClient.from_service_account_json(SERVICE_KEY_PATH)
     subscription_path = subscriber.subscription_path(PROJECT_ID, SUBSCRIPTION_ID)
     
@@ -167,7 +167,7 @@ def start_listening():
         streaming_pull_future.cancel()
         print("\n購読終了")
 
-def setup_gmail_watch(creds):
+def setup_gmail_watch(creds):#Serviceに実装済み
     service = get_gmail_service(creds)
     
     # 自分のプロジェクトのトピック名を指定
