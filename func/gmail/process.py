@@ -1,6 +1,5 @@
 import json
 from email.utils import parseaddr
-import func.gmail.handlers as handlers
 class GmailProcess:
     def __init__(self,service):
         self.service = service
@@ -19,12 +18,14 @@ class GmailProcess:
             msg = self.service().users().messages().get(userId='me', id=msg_id, format='full').execute()
             payload = msg.get('payload', {})
             headers = payload.get('headers', [])
+            labels = msg.get('labelIds', [])  # ラベル一覧を取得
             
             return {
                 "id": msg_id,
                 "from": next((h['value'] for h in headers if h['name'] == 'From'), ""),
                 "subject": next((h['value'] for h in headers if h['name'] == 'Subject'), ""),
                 "snippet": msg.get('snippet', ""),
+                "is_unread": "UNREAD" in labels,
                 "payload": payload  # これをそのまま Handler に渡す
             }
         except Exception as e:
@@ -41,7 +42,7 @@ class GmailProcess:
             return
         address = parseaddr(details['from'])[1]  # メールアドレスだけを抽出
         if address in self.handler:
-            await self.handler[address].receive_mail(details)  # メタデータとペイロードを渡す
+            await self.handler[address].handle(details)  # メタデータとペイロードを渡す
 
         self.msg_ids.append(msg_id)
         if len(self.msg_ids) > 100:

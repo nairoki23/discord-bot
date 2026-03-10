@@ -28,6 +28,9 @@ class GmailService:
     def service(self):
         return build('gmail', 'v1', credentials=self.get_creds())
 
+    def set_handler(self,handlers):
+        self.process.set_handler(handlers)
+
     def setup_gmail_watch(self):
         TOPIC_NAME = f"projects/{PROJECT_ID}/topics/{GCP_TOPIC_ID}" # ← ここを書き換える
         request_body = {
