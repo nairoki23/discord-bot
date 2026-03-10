@@ -38,6 +38,7 @@ class GmailProcess:
         if msg_id in self.msg_ids:
             print(f"Skipping: すでに処理済みのメッセージです ({msg_id})")
             return
+        self.msg_ids.append(msg_id)
         details = self.get_mail_details(msg_id)
         if not details:
             print(f"詳細取得失敗: {msg_id}")
@@ -46,7 +47,6 @@ class GmailProcess:
         if address in self.handler:
             await self.handler[address].handle(details)  # メタデータとペイロードを渡す
 
-        self.msg_ids.append(msg_id)
         if len(self.msg_ids) > 100:
             self.msg_ids.pop()
         return details

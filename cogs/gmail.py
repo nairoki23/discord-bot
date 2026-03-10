@@ -40,7 +40,7 @@ class GmailAuthModal(ui.Modal, title='Gmail 認証コードの入力'):
         await interaction.response.defer(ephemeral=True)
         
         # 認証実行（自作の認証完了メソッドを呼ぶ）
-        success = await self.auth_handler.interactive_creds(code)
+        success = self.auth_handler.interactive_creds(code)
         
         if success:
             await interaction.followup.send("認証に成功しました",ephemeral=True)
@@ -48,7 +48,6 @@ class GmailAuthModal(ui.Modal, title='Gmail 認証コードの入力'):
             await interaction.followup.send("Gmailサービスを開始します", ephemeral=True)
         else:
             await interaction.followup.send(" 認証に失敗しました。", ephemeral=True)
-
 # --- 2. ボタンを表示するView ---
 class GmailAuthView(ui.View):
     def __init__(self, auth_url, auth_handler,setup):
@@ -114,25 +113,22 @@ class GmailCog(commands.Cog):
     
     @app_commands.command(name="gmail_state", description="Gmailのserviceの状況を確認します")
     async def gmail_state(self, interaction: discord.Interaction):
-        try:
-            if not await interaction_user(interaction):
-                return
-            creds=self.auth.get_creds()
-            if creds is None:
-                text="Gmailは認証されていません。"
-            else:
-                text="Gmailは認証されています。"
-            embeds=[
-                    discord.Embed(title="認証状況", description=text),
-                    ]
-            if self.service is not None:
-                embeds.append(discord.Embed(title="Handler数",description=str(self.service.state_handler())))
-            await interaction.response.send_message(
-                content="Gmailサービスの状態",
-                embeds=embeds
-                )
-        except Exception as e:
-            print(e)
+        if not await interaction_user(interaction):
+            return
+        creds=self.auth.get_creds()
+        if creds is None:
+            text="Gmailは認証されていません。"
+        else:
+            text="Gmailは認証されています。"
+        embeds=[
+                discord.Embed(title="認証状況", description=text),
+                ]
+        if self.service is not None:
+            embeds.append(discord.Embed(title="Handler数",description=str(self.service.state_handler())))
+        await interaction.response.send_message(
+            content="Gmailサービスの状態",
+            embeds=embeds
+            )
 
 
     @app_commands.command(name="gmail_start", description="Gmailサービスの開始")
@@ -145,14 +141,14 @@ class GmailCog(commands.Cog):
 
     @app_commands.command(name="gmail_auth", description="Gmailの認証を開始します")
     async def gmail_auth(self, interaction: discord.Interaction):
-        if not await interaction_user(interaction):
-            return
-        if self.auth.flow is not None:
-            await interaction.response.send_message("既存の認証セッションは破棄します。", ephemeral=True)
-        await interaction.response.send_message("Gmail認証。画面の指示に従って認証したあと、移動したページのURLを貼ってください。",
-        view= GmailAuthView(self.auth.create_cred_url(), self.auth,self.cog_load),
-        ephemeral=True # 自分にしか見えないようにする
-    )
+        try:
+            if not await interaction_user(interaction):
+                return
+            await interaction.response.send_message({True:"",False:"既存の認証セッションは破棄しました。\n"}[self.auth.flow is None]+"Gmail認証です。画面の指示に従って認証したあと、移動したページのURLを貼ってください。",
+                view= GmailAuthView(self.auth.create_cred_url(), self.auth,self.cog_load),
+                ephemeral=True) # 自分にしか見えないようにする
+        except Exception as e:
+            print(f"Callback Error: {e}")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(GmailCog(bot))

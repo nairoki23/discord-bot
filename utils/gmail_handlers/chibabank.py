@@ -35,7 +35,6 @@ class ChibabankHandler(BaseHandler):
 
     async def handle(self, details):
         text = base64.urlsafe_b64decode(details["payload"]["body"]["data"]).decode("utf-8")
-        print(details["subject"])
         if details["subject"]=="【TSUBASAちばぎんVisaデビットカード】ご利用のお知らせ":
             # 抽出用パターン
             date_match = re.search(r'お取引日：\s*([\d/]+)', text)
@@ -64,7 +63,7 @@ class ChibabankHandler(BaseHandler):
             )
         elif details["subject"]== "【TSUBASAちばぎんVisaデビットカード】ご返金受付のお知らせ":
             date_match = re.search(r'ご返金受付日：\s*([\d/]+)', text)
-            amount_match = re.search(r'ご返金予定額：\s*([\d,.-]+)', text)
+            amount_match = re.search(r'ご返金予定額：\s*(.+)', text)
             content_match = re.search(r'お取引内容：\s*(.+)', text)
             auth_match = re.search(r'承認番号：\s*(\d+)', text)
 

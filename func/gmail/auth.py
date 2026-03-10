@@ -54,6 +54,8 @@ class GmailAuth:
             return None
         self.flow.fetch_token(authorization_response=url)
         creds = self.flow.credentials
+        with open(USER_TOKEN_PATH, 'w') as token:
+            token.write(creds.to_json())
         return creds.valid
 
     def create_cred_url(self):
