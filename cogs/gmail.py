@@ -80,7 +80,7 @@ class GmailCog(commands.Cog):
         ch = self.bot.get_channel(TARGET_CHANNNEL_ID)
         if not ch:
             try:
-                return await self.bot.fetch_channel(TARGET_CHANNNEL_ID).send
+                ch=await self.bot.fetch_channel(TARGET_CHANNNEL_ID)
             except Exception as e:
                 print(f"チャンネル取得失敗: {e}")
                 return None
@@ -95,7 +95,7 @@ class GmailCog(commands.Cog):
             self.service = GmailService(self.auth.get_creds,self.bot.loop)
             handlers_dict={}
             for h in HANDLERS:
-                handler=h(self.sender())
+                handler=h(await self.sender())
                 handlers_dict[handler.address]=handler
             self.service.set_handler(handlers_dict)
             self.service.setup_gmail_watch()
