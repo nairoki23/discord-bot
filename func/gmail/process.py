@@ -1,18 +1,15 @@
 import json
 from email.utils import parseaddr
 import func.gmail.handlers as handlers
-
-HANDLERS ={
-    "mail@vdebit.chibabank.co.jp": handlers.chibabank,
-    "viewcard@mail.viewsnet.jp": handlers.viewcard,
-    
-    }
-
 class GmailProcess:
     def __init__(self,service):
         self.service = service
         self.history_ids=[]
         self.msg_ids=[]
+        self.handler={}
+
+    def set_handler(self,handlers):
+        self.handler=handlers
 
     def set_history_id(self,history_id):
         self.history_ids.append(history_id)
@@ -34,7 +31,7 @@ class GmailProcess:
             return None
 
 
-    def process_message(self, msg_id):
+    async def process_message(self, msg_id):
         if msg_id in self.msg_ids:
             print(f"Skipping: すでに処理済みのメッセージです ({msg_id})")
             return
@@ -43,8 +40,8 @@ class GmailProcess:
             print(f"詳細取得失敗: {msg_id}")
             return
         address = parseaddr(details['from'])[1]  # メールアドレスだけを抽出
-        if address in HANDLERS:
-            HANDLERS[address].receive_mail(details)  # メタデータとペイロードを渡す
+        if address in self.handler:
+            await self.handler[address].receive_mail(details)  # メタデータとペイロードを渡す
 
         self.msg_ids.append(msg_id)
         if len(self.msg_ids) > 100:
@@ -68,7 +65,7 @@ class GmailProcess:
             return
         return history_results.get('history', [])
 
-    def sub_callback(self, message):
+    async def sub_callback(self, message):
         try:
             message.ack()
             new_history_id = json.loads(message.data.decode("utf-8")).get("historyId")
@@ -79,6 +76,6 @@ class GmailProcess:
                 for h in histories:
                     for m_item in h.get('messagesAdded', []):
                         print(m_item)
-                        self.process_message(m_item['message']['id'])
+                        await self.process_message(m_item['message']['id'])
         except Exception as e:
             print(f"Callback Error: {e}")

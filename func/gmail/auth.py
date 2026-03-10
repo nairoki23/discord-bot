@@ -46,7 +46,6 @@ class GmailAuth:
                     token.write(creds.to_json())
                 return creds
             except Exception as e:
-                print(f"自動リフレッシュに失敗しました: {e}")
                 return None
         else:
             return None
