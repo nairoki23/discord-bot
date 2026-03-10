@@ -1,6 +1,12 @@
 import json
+from email.utils import parseaddr
+import func.gmail.handlers as handlers
 
-HANDLERS ={}
+HANDLERS ={
+    "mail@vdebit.chibabank.co.jp": handlers.chibabank,
+    "viewcard@mail.viewsnet.jp": handlers.viewcard,
+    
+    }
 
 class GmailProcess:
     def __init__(self,service):
@@ -36,9 +42,9 @@ class GmailProcess:
         if not details:
             print(f"詳細取得失敗: {msg_id}")
             return
-        
-        if details['from'] in HANDLERS:
-            HANDLERS[details['from']](details)  # メタデータとペイロードを渡す
+        address = parseaddr(details['from'])[1]  # メールアドレスだけを抽出
+        if address in HANDLERS:
+            HANDLERS[address].receive_mail(details)  # メタデータとペイロードを渡す
 
         self.msg_ids.append(msg_id)
         if len(self.msg_ids) > 100:
