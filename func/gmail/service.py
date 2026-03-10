@@ -2,7 +2,7 @@ import os
 from google.cloud import pubsub_v1
 from dotenv import dotenv_values
 from googleapiclient.discovery import build
-from func.gmail.process import GmailProcess
+from func.gmail.process import GmailProcess 
 
 # 環境変数の読み込み
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # HTTPでのテストを許可
@@ -21,8 +21,8 @@ HISTORY_FILE = "last_history_id.txt"
 class GmailService:
     def __init__(self,get_creds):
         self.get_creds=get_creds
-        self.setup_gmail_watch()
         self.process = GmailProcess(self.service)
+        #self.setup_gmail_watch()
     
     def service(self):
         return build('gmail', 'v1', credentials=self.get_creds())
