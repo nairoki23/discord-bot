@@ -4,7 +4,7 @@ import os.path
 from dotenv import dotenv_values
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 
 # 環境変数の読み込み
@@ -23,7 +23,7 @@ HISTORY_FILE = "last_history_id.txt"
 
 class GmailAuth:
     def __init__(self):
-        pass
+        self.flow = None
     def get_creds(self):
         """
         ユーザー操作なしで認証を試みる。
@@ -49,5 +49,19 @@ class GmailAuth:
                 return None
         else:
             return None
-    def interactive_creds(self):
-        pass
+    def interactive_creds(self,url):
+        if self.flow is None:
+            return None
+        self.flow.fetch_token(authorization_response=url)
+        creds = self.flow.credentials
+        return creds.valid
+
+    def create_cred_url(self):
+        self.flow = InstalledAppFlow.from_client_secrets_file(
+                OAUTH_CLIENT_PATH, 
+                SCOPES, 
+                redirect_uri='https://nairoki.dev'
+        )
+        # prompt='consent' を追加して確実にリフレッシュトークンを取得
+        auth_url, _ = self.flow.authorization_url(access_type='offline', prompt='consent')
+        return auth_url

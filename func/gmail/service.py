@@ -31,6 +31,9 @@ class GmailService:
     def set_handler(self,handlers):
         self.process.set_handler(handlers)
 
+    def state_handler(self):
+        return self.process.state_handler()
+
     def setup_gmail_watch(self):
         TOPIC_NAME = f"projects/{PROJECT_ID}/topics/{GCP_TOPIC_ID}" # ← ここを書き換える
         request_body = {
@@ -44,7 +47,6 @@ class GmailService:
     
 
     def callback(self,message):
-        print("callback")
         asyncio.run_coroutine_threadsafe(
             self.process.sub_callback(message), 
             self.loop

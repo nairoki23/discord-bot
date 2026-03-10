@@ -10,6 +10,8 @@ class GmailProcess:
     def set_handler(self,handlers):
         self.handler=handlers
 
+    def state_handler(self):
+        return sum(1 for h in self.handler.values() if h.sender is not None)
     def set_history_id(self,history_id):
         self.history_ids.append(history_id)
 
@@ -71,12 +73,9 @@ class GmailProcess:
             message.ack()
             new_history_id = json.loads(message.data.decode("utf-8")).get("historyId")
             histories= self.diff_history(new_history_id)
-            if not histories:
-                print(f"履歴なし: {new_history_id}")
-            else:
+            if histories:
                 for h in histories:
                     for m_item in h.get('messagesAdded', []):
-                        print(m_item)
                         await self.process_message(m_item['message']['id'])
         except Exception as e:
             print(f"Callback Error: {e}")
