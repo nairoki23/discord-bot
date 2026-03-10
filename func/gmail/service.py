@@ -22,7 +22,6 @@ class GmailService:
     def __init__(self,get_creds):
         self.get_creds=get_creds
         self.process = GmailProcess(self.service)
-        #self.setup_gmail_watch()
     
     def service(self):
         return build('gmail', 'v1', credentials=self.get_creds())
