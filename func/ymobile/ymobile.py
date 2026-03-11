@@ -63,7 +63,6 @@ class Ymobile():
         self.login()
         self.access()
         self.trim()
-print(__name__)
 if __name__ == "__main__":
     y=Ymobile(config.get("PHONE_NUMBER"),config.get("YMOBILE_PASSWORD"))
     y.get()

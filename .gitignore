@@ -1,3 +1,5 @@
 .env
 *.pyc
 venv/*
+.gcp_keys/*
+!.gcp_keys/.gitkeep
