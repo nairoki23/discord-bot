@@ -15,11 +15,8 @@ class Ymobile():
         #単位は1mb
         self.kurikoshi=0
         self.base=0
-        self.charged=0
-        self.mileage=0
-        self.usable=0
+        self.other=0#その他容量
         self.used=0
-        self.remaining=0
 
 
     def login(self):
@@ -48,22 +45,36 @@ class Ymobile():
         def get_mb(s:str) -> int:
             s=s.replace("GB", "").split(".")
             return int(s[0])*1000+int(s[1])*(10**(4-len(s[1])))
+        print(self.res)
         mon=self.res.find("h2",class_="res-fs16").get_text(strip=True)
         p=self.res.find_all("p",class_="res-fs14")
-        ds=self.res.find(class_="list-toggle-content").find_all("table")
-        self.kurikoshi=get_mb(ds[0].find("tbody").find("td").get_text(strip=True))
-        self.base=get_mb(ds[1].find("tbody").find_all("tr")[1].find("td").get_text(strip=True))
-        self.charged=get_mb(ds[3].find("tbody").find("tr").find("td").get_text(strip=True))
-        self.mileage=get_mb(ds[2].find("tbody").find_all("tr")[1].find("td").find(string=True,recursive=False).strip())
-        self.usable=self.kurikoshi+self.base+self.charged+self.mileage
-        self.used=get_mb(ds[4].find("tbody").find("tr").find("td").get_text(strip=True))
-        self.remaining=self.usable-self.used
+        data={}
+        for t in self.res.find(class_="list-toggle-content").find_all("table"):
+            data[t.find("tbody").find("th").get_text(strip=True)]=t.find("tbody").find("td").get_text(strip=True)
+            continue
+        for k in data:
+            if k in "くりこし分":
+                self.kurikoshi=get_mb(data[k])
+            elif k=="基本データ量 残り":
+                self.base=get_mb(data[k].split("／"[0]))
+            elif k=="使用量 合計":
+                self.used=get_mb(data[k])
+            else :
+                self.other=self.other+get_mb(data[k])
+        all_usable=self.kurikoshi+self.base+self.other
+        return {
+            "kurikoshi":self.kurikoshi,
+            "base":self.base,
+            "used":self.used,
+            "all_usable":all_usable,
+            "remaining":all_usable-self.used
+        }
 
     def get(self):
         self.login()
         self.access()
-        self.trim()
+        return self.trim()
 if __name__ == "__main__":
     y=Ymobile(config.get("PHONE_NUMBER"),config.get("YMOBILE_PASSWORD"))
-    y.get()
-    print("データ量残量："+str(y.remaining/1000)+"GB/"+str(y.usable/1000)+"GB")
+    data=y.get()
+    print(data)
