@@ -24,6 +24,7 @@ class GmailService:
         self.get_creds=get_creds
         self.process = GmailProcess(self.service)
         self.loop=loop
+        self.streaming=None
 
     def service(self):
         return build('gmail', 'v1', credentials=self.get_creds())
@@ -55,6 +56,10 @@ class GmailService:
     def start_listening(self): 
         subscriber = pubsub_v1.SubscriberClient.from_service_account_json(SERVICE_KEY_PATH)
         subscription_path = subscriber.subscription_path(PROJECT_ID, SUBSCRIPTION_ID)
+        
+        if self.streaming:
+            self.streaming.cancel()
+            print("前セッションの購読終了。")
         
         print(f"購読開始中... {subscription_path}")
         self.streaming=subscriber.subscribe(subscription_path, callback=self.callback)

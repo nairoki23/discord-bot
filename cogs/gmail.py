@@ -12,6 +12,7 @@ TARGET_CHANNNEL_ID = int(config.get("NOTIFICATION_CHANNEL_ID"))
 HANDLERS =(
     handlers.chibabank.ChibabankHandler,
     handlers.viewcard.ViewHandler,
+    handlers.my.MyHandler
 )
 
 import discord
