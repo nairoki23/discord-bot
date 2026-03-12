@@ -57,7 +57,7 @@ class GmailService:
         subscriber = pubsub_v1.SubscriberClient.from_service_account_json(SERVICE_KEY_PATH)
         subscription_path = subscriber.subscription_path(PROJECT_ID, SUBSCRIPTION_ID)
         
-        if self.streaming:
+        if self.streaming is not None:
             self.streaming.cancel()
             print("前セッションの購読終了。")
         
