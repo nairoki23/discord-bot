@@ -44,7 +44,7 @@ class Ymobile():
     def trim(self):
         def get_mb(s:str) -> int:
             s=s.replace("GB", "").split(".")
-            return int(s[0])*1000+int(s[1])*(10**(4-len(s[1])))
+            return int(s[0])*1000+int(s[1])*(10**(3-len(s[1])))
         print(self.res)
         mon=self.res.find("h2",class_="res-fs16").get_text(strip=True)
         p=self.res.find_all("p",class_="res-fs14")
@@ -53,11 +53,12 @@ class Ymobile():
             data[t.find("tbody").find("th").get_text(strip=True)]=t.find("tbody").find("td").get_text(strip=True)
             continue
         for k in data:
-            if k in "くりこし分":
+            if "くりこし分" in k:
                 self.kurikoshi=get_mb(data[k])
             elif k=="基本データ量 残り":
-                self.base=get_mb(data[k].split("／"[0]))
+                self.base=get_mb(data[k].split("／")[0])
             elif k=="使用量 合計":
+                print(data[k])
                 self.used=get_mb(data[k])
             else :
                 self.other=self.other+get_mb(data[k])
