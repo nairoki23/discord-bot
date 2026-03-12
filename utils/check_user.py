@@ -9,5 +9,5 @@ async def interaction_user(interaction):
     if check_user(interaction.user.id):
         return True
     else:
-        await interaction.response.send_message("これは見せることができません。",ephemeral=True)
+        await interaction.response.send_message("実行権限がありません",ephemeral=True)
         return False

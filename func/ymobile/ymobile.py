@@ -6,18 +6,24 @@ from discord.ext import commands
 config = dotenv_values(".env")
 
 
+import dataclasses
+@dataclasses.dataclass
+class YmobileData:
+    kurikoshi: int = None
+    base: int = None
+    used: int = None
+    all_usable: int = None
+    remaining: int = None
+    mon: str = None
+    period: str = None
+    tel: str = None
+
 class Ymobile():
     def __init__(self,_PhoneNumber,_PassWord):
         self.PhoneNumber=_PhoneNumber
         self.PassWord=_PassWord
         self.s = requests.Session()
         
-        #単位は1mb
-        self.kurikoshi=0
-        self.base=0
-        self.other=0#その他容量
-        self.used=0
-
 
     def login(self):
         r = self.s.get('https://my.ymobile.jp/muc/d/webLink/doSend/MWBWL0130')
@@ -45,31 +51,40 @@ class Ymobile():
         def get_mb(s:str) -> int:
             s=s.replace("GB", "").split(".")
             return int(s[0])*1000+int(s[1])*(10**(3-len(s[1])))
-        print(self.res)
-        mon=self.res.find("h2",class_="res-fs16").get_text(strip=True)
-        p=self.res.find_all("p",class_="res-fs14")
+        
+       
         data={}
+
+        YmobileData()
+        kurikoshi=0
+        base=0
+        used=0
+        other=0
         for t in self.res.find(class_="list-toggle-content").find_all("table"):
             data[t.find("tbody").find("th").get_text(strip=True)]=t.find("tbody").find("td").get_text(strip=True)
             continue
         for k in data:
             if "くりこし分" in k:
-                self.kurikoshi=get_mb(data[k])
+                kurikoshi=get_mb(data[k])
             elif k=="基本データ量 残り":
-                self.base=get_mb(data[k].split("／")[0])
+                base=get_mb(data[k].split("／")[0])
             elif k=="使用量 合計":
                 print(data[k])
-                self.used=get_mb(data[k])
+                used=get_mb(data[k])
             else :
-                self.other=self.other+get_mb(data[k])
-        all_usable=self.kurikoshi+self.base+self.other
-        return {
-            "kurikoshi":self.kurikoshi,
-            "base":self.base,
-            "used":self.used,
-            "all_usable":all_usable,
-            "remaining":all_usable-self.used
-        }
+                other=other+get_mb(data[k])
+        all_usable=kurikoshi+base+other
+        p=self.res.find_all("p",class_="res-fs14")
+        return YmobileData(
+            kurikoshi=kurikoshi,
+            base=base,
+            used=used,
+            all_usable=all_usable,
+            remaining=all_usable-used,
+            mon=self.res.find("h2",class_="res-fs16").get_text(strip=True),
+            period=p[0].get_text(strip=True),
+            tel=p[1].get_text(strip=True),
+        )
 
     def get(self):
         self.login()
