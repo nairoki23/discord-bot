@@ -18,7 +18,8 @@ class MyBot(commands.Bot):
             "cogs.timer",
             "cogs.spending",
             "cogs.ban",
-            "cogs.gmail"
+            "cogs.gmail",
+            "cogs.classweek"
         ]
         for ext in extensions:
             await self.load_extension(ext)
