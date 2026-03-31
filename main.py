@@ -1,6 +1,9 @@
 from dotenv import dotenv_values
 import discord
 from discord.ext import commands
+from pathlib import Path
+
+
 
 # .env読み込み
 config = dotenv_values(".env")
@@ -11,19 +14,20 @@ class MyBot(commands.Bot):
 
     # ボット起動時に一度だけ呼ばれる準備用関数
     async def setup_hook(self):
-        # ここでCogを読み込む
-        extensions = [
-            "cogs.ping",
-            "cogs.data_usage",
-            "cogs.timer",
-            "cogs.spending",
-            "cogs.ban",
-            "cogs.gmail",
-            "cogs.class_schedule"
-        ]
-        for ext in extensions:
-            await self.load_extension(ext)
-        
+        base = Path("./cogs")
+
+        for path in base.rglob("*.py"):
+            if path.name.startswith("_"):
+                continue
+
+            # cogs.xxx.yyy 形式に変換
+            module = ".".join(path.with_suffix("").parts)
+
+            try:
+                await self.load_extension(module)
+                print(f"Loaded: {module}")
+            except Exception as e:
+                print(f"Failed: {module} -> {e}")
         # スラッシュコマンドの同期
         guild = discord.Object(id=config.get("TEST_GUILD"))
         self.tree.copy_global_to(guild=guild)

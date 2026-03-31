@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
-from func.gmail.auth import GmailAuth
-from func.gmail.service import GmailService
+from service.gmail.auth import GmailAuth
+from service.gmail.service import GmailService
 from utils.check_user import interaction_user
 import utils.gmail_handlers as handlers
 from dotenv import dotenv_values
