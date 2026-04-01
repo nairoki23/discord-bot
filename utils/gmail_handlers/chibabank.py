@@ -1,4 +1,4 @@
-from .base import BaseHandler
+from service.gmail.HandlerBase import BaseHandler
 import re
 import base64
 from discord import Embed

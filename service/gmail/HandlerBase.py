@@ -7,6 +7,7 @@ class BaseHandler(ABC):
         Botインスタンスなどを保持し、Discord送信の準備などを整える。
         """
         self.sender=sender
+        self.address=""
 
     @abstractmethod
     async def handle(self, details: dict):

@@ -7,8 +7,14 @@ class GmailProcess:
         self.msg_ids=[]
         self.handler={}
 
-    def set_handler(self,handlers):
-        self.handler=handlers
+    def set_handler(self,handler):
+        if (handler is None) or (handler.address is None) or (handler.address in self.handler) or (handler.sender is None):
+            return False
+        self.handler[handler.address]=handler
+        return True
+
+    def del_handler(self,address):
+        del self.handler[address]
 
     def state_handler(self):
         return sum(1 for h in self.handler.values() if h.sender is not None)

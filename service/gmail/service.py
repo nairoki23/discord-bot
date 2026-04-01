@@ -29,9 +29,11 @@ class GmailService:
     def service(self):
         return build('gmail', 'v1', credentials=self.get_creds())
 
-    def set_handler(self,handlers):
-        self.process.set_handler(handlers)
+    def set_handler(self,handler):
+        return self.process.set_handler(handler)
 
+    def del_handler(self,address):
+        self.process.del_handler(address)
     def state_handler(self):
         return self.process.state_handler()
 

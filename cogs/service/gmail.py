@@ -93,11 +93,8 @@ class GmailCog(commands.Cog):
             return False
         try:
             self.service = GmailService(self.auth.get_creds,self.bot.loop)
-            handlers_dict={}
             for h in HANDLERS:
-                handler=h(await self.sender())
-                handlers_dict[handler.address]=handler
-            self.service.set_handler(handlers_dict)
+                self.service.set_handler(h(await self.sender()))
             self.service.setup_gmail_watch()
             self.service.start_listening()
 

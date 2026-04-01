@@ -1,5 +1,5 @@
 import base64
-from .base import BaseHandler
+from service.gmail.HandlerBase import BaseHandler
 import re
 from datetime import datetime
 from discord import Embed,Color

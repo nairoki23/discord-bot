@@ -1,5 +1,4 @@
-import base64
-from .base import BaseHandler
+from service.gmail.HandlerBase import BaseHandler
 class MyHandler(BaseHandler):
     def __init__(self, sender):
         # 親クラスの初期化（self.bot = bot が実行される）
