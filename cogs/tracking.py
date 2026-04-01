@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands,tasks
-from func.tracking.yamato import get_data
+from func.tracking.fetch.yamato import get_data
 
 class Tracking(commands.Cog):
     def __init__(self, bot: commands.Bot):
