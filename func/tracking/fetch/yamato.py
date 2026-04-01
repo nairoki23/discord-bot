@@ -4,7 +4,9 @@ from pprint import pprint
 import utils
 from datetime import datetime,date,timedelta
 
-def get_data(num):
+
+
+def fetch_yamato(num):
     s = requests.Session()
     payload={
         "backrequest":"get",
@@ -19,7 +21,7 @@ def get_data(num):
     for pack in packs:
         state=pack.find(class_="tracking-invoice-block-state")        
         data=utils.Pack(
-            brand=1,
+            brand="yamato",
             num=pack.find(class_="tracking-invoice-block-title").get_text().split("：")[1],
             state_title=state.find(class_="tracking-invoice-block-state-title").get_text(),
             state_summary=state.find(class_="tracking-invoice-block-state-summary").get_text(),

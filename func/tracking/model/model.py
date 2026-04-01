@@ -1,10 +1,7 @@
 from dataclasses import dataclass,field
-from enum import IntEnum
+
 from datetime import datetime,date,timedelta
-class Brand(IntEnum):
-    yamato=1
-    jp=2
-    sagawa=3
+from .brand import Brand
 
 @dataclass
 class Detail:

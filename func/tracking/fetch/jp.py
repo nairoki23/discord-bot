@@ -3,8 +3,10 @@ from bs4 import BeautifulSoup as bs
 from pprint import pprint
 import utils
 from datetime import datetime
+from ..model.brand import Brand
 
-def get_data(num):
+
+def fetch_jp(num):
     payload = {
         'reqCodeNo1':num,}
     s = requests.Session()
@@ -40,7 +42,7 @@ def get_data(num):
     
     p_i=pack[0].find_all("td")
     res=utils.Pack(
-        brand=2,
+        brand="jp",
         num=p_i[0].get_text(),
         type=p_i[1].get_text(),
         details=details,

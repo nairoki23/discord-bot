@@ -4,7 +4,8 @@ from pprint import pprint
 import utils
 from datetime import datetime
 
-def get_data(num):
+
+def fetch_sagawa(num):
     payload = {
         'okurijoNo':num,}
     s = requests.Session()
@@ -16,7 +17,7 @@ def get_data(num):
     packs=soup.find("section",id="c01")#荷物ごとになる
     st= packs.find("dt",id="list1")
     res=utils.Pack(
-        brand=3,
+        brand="sagawa",
         num=st.find(class_="number nowrap").find("strong").get_text(strip=True),
         state_title=st.find("span",class_="state").get_text(strip=True),
         state_summary=st.find("td",colspan="3").get_text(strip=True),
