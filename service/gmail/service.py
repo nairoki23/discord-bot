@@ -2,7 +2,7 @@ import os
 from google.cloud import pubsub_v1
 from dotenv import dotenv_values
 from googleapiclient.discovery import build
-from func.gmail.process import GmailProcess 
+from service.gmail.process import GmailProcess
 import asyncio
 
 # 環境変数の読み込み

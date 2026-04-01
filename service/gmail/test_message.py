@@ -1,7 +1,7 @@
 import asyncio
-from func.gmail.auth import GmailAuth
-from func.gmail.service import GmailService
-from func.gmail.process import GmailProcess 
+from service.gmail.auth import GmailAuth
+from service.gmail.service import GmailService
+from service.gmail.process import GmailProcess
 import utils.gmail_handlers as handlers
 from utils.debug import send
 
