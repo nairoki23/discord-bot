@@ -1,8 +1,6 @@
-import discord
 from discord.ext import commands, tasks
 from discord import app_commands
-from service.gmail.auth import GmailAuth
-from service.gmail.service import GmailService
+from service.container import get_gmail_service,get_gmail_auth
 from utils.check_user import interaction_user
 import utils.gmail_handlers as handlers
 from dotenv import dotenv_values
@@ -72,7 +70,7 @@ class GmailAuthView(ui.View):
 class GmailCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.auth = GmailAuth()
+        self.auth = get_gmail_auth()
         self.service=None
         self.process=None
         self.setup_gmail_watch.start()
@@ -92,7 +90,7 @@ class GmailCog(commands.Cog):
             print("GmailServiceは立ち上がりませんでした。")
             return False
         try:
-            self.service = GmailService(self.auth.get_creds,self.bot.loop)
+            self.service = get_gmail_service(self.auth.get_creds,self.bot.loop)
             for h in HANDLERS:
                 self.service.set_handler(h(await self.sender()))
             self.service.setup_gmail_watch()
