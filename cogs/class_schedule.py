@@ -26,6 +26,13 @@ class ClassSchedule(commands.Cog):
         res+=week_sc_message(today - timedelta(days=today.weekday())+ timedelta(days=7))
         await interaction.response.send_message(res)
 
+    @discord.app_commands.command(name="week", description="今週の学校予定")
+    async def now_week(self, interaction: discord.Interaction):
+        today = date.today()
+        res="今週の予定\n"
+        res+=week_sc_message(today - timedelta(days=today.weekday()))
+        await interaction.response.send_message(res)
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(ClassSchedule(bot))
