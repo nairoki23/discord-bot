@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from nanoid import generate
 from .model.state import State
 import asyncio
-
+from urllib.parse import urlparse,parse_qs
 
 
 FETCH_DELTA=timedelta(minutes=20)
@@ -47,7 +47,7 @@ class Tracking:
             if cb_id not in self.cb:
                 break
         self.cb[cb_id] = cb
-        return True
+        return cb_id
 
     def del_cb(self, cb_id):
         if cb_id not in self.cb:
@@ -60,23 +60,84 @@ class Tracking:
         if now_pack:
             if (self.latest_pack is None) or (len(now_pack.details)!=len(self.latest_pack.details)) or (now_pack.details[-1]!=self.latest_pack.details[-1]) or (now_pack.state_title!=self.latest_pack.state_title):
                 for cb in self.cb.values():
-                    result=cb(now_pack)
+                    result=cb(self.latest_pack)
                     if asyncio.iscoroutine(result):
                         await result
                     continue
             if now_pack.state_type==State.arrival:
                 return None
+        self.latest_pack=now_pack
         return datetime.now()+FETCH_DELTA
 
 
 
 class Track:
     def __init__(self):
-        self.trackings=[]
-    async def fetch_pack(self,tracking_num,brand,name):
+        self.trackings={
+            Brand.yamato:{},
+            Brand.sagawa: {},
+            Brand.jp: {},
+        }
+
+    def parse_tracking(self,url_or_number: str,carrier:Brand|None=None):
+        def is_url(s: str) -> bool:
+            try:
+                result = urlparse(s)
+                return all([result.scheme, result.netloc])
+            except:
+                return False
+
+        def extract_tracking_number(url: str) -> str | None:
+            query = parse_qs(urlparse(url).query)
+
+            # 日本郵便
+            if "requestNo1" in query:
+                return query["requestNo1"][0]
+            # ヤマト
+            if "no01" in query:
+                return query["no01"][0]
+
+            return None
+
+        def detect_carrier_from_url(url: str) -> Brand|None:
+            host = urlparse(url).netloc
+            if "japanpost.jp" in host:
+                return Brand("jp")
+            if "kuronekoyamato.co.jp" in host:
+                return Brand("yamato")
+            if "sagawa-exp.co.jp" in host:
+                return Brand("sagawa")
+
+            return None
+
+        if not is_url(url_or_number):
+            return carrier,url_or_number
+        carrier = detect_carrier_from_url(url_or_number)
+        number = extract_tracking_number(url_or_number)
+        return carrier,number
+
+
+    async def fetch_pack(self,tracking_num:str,brand:Brand,name):
         return await Tracking(tracking_num,brand,name).fetch_pack()
-    def start_track(self,tracking_num,brand,sender):
-        self.fetch_pack(tracking_num,brand)
+
+    async def start_track(self,tracking_num,brand,name,cb):
+        if tracking_num in self.trackings[brand]:
+            return None
+        self.trackings[brand][tracking_num]=Tracking(tracking_num,brand,name)
+        cb_id=self.trackings[brand][tracking_num].set_cb(cb)
+        await self.trackings[brand][tracking_num].set_track()
+        return cb_id
+
+    async def add_cb(self,tracking_num,brand,cb):
+        if tracking_num not in self.trackings[brand]:
+            return None
+        cb_id = self.trackings[brand][tracking_num].set_cb(cb)
+        return cb_id
+
+    async def remove_cb(self,tracking_num,brand,cb):
+        if tracking_num not in self.trackings[brand]:
+            return False
+        return self.trackings[brand][tracking_num].del_cb(cb)
 
 
 _track=Track()
