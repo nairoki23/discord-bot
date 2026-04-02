@@ -1,10 +1,12 @@
-import requests				# HTTP通信ライブラリ
+import aiohttp				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 from pprint import pprint
-import utils
-from datetime import datetime,date,timedelta
-
-
+from ..utils import adjust_year
+from ..model.detail import Detail
+from ..model.pack import Pack
+from ..utils import state_changer
+from datetime import datetime,date
+from ..model.state import State
 
 def fetch_yamato(num):
     s = requests.Session()
@@ -19,11 +21,13 @@ def fetch_yamato(num):
     packs=soup.find_all(class_="parts-tracking-invoice-block")#荷物ごとになる
     res=[]
     for pack in packs:
-        state=pack.find(class_="tracking-invoice-block-state")        
-        data=utils.Pack(
+        state=pack.find(class_="tracking-invoice-block-state")
+        state_title=state.find(class_="tracking-invoice-block-state-title").get_text()
+        data=Pack(
             brand="yamato",
             num=pack.find(class_="tracking-invoice-block-title").get_text().split("：")[1],
-            state_title=state.find(class_="tracking-invoice-block-state-title").get_text(),
+            state_title=state_title,
+            state_type=state_changer({"配達完了":State("arrival")},state_title),
             state_summary=state.find(class_="tracking-invoice-block-state-summary").get_text(),
             state_note=state.find(class_="tracking-invoice-block-state-note").get_text()
         )
@@ -34,14 +38,16 @@ def fetch_yamato(num):
                     data.type=s.find(class_="data").get_text()
                 elif s.find(class_="item").get_text().replace("：","")=="お届け予定日時":
                     today = date.today()
-                    data.est_date = utils.adjust_year(datetime.strptime(f"{today.year}/{s.find(class_="data").get_text()}", "%Y/%m/%d").date())
+                    t=s.find(class_="data").get_text()
+                    if t!="-":
+                        data.est_date = adjust_year(datetime.strptime(f"{today.year}/{t}", "%Y/%m/%d").date())
 
         details=pack.find(class_="tracking-invoice-block-detail")#進み具合
         if details:
             data.details=[]
             for detail in details.find_all("li"):
                 now = datetime.now()
-                d=utils.Detail(title=detail.find(class_="item").get_text(),time=utils.adjust_year(datetime.strptime(f"{now.year}年{detail.find(class_="date").get_text()}", "%Y年%m月%d日 %H:%M")),place_name="")
+                d=Detail(title=detail.find(class_="item").get_text(),time=adjust_year(datetime.strptime(f"{now.year}年{detail.find(class_="date").get_text()}", "%Y年%m月%d日 %H:%M")),place_name="")
                 place=detail.find(class_="name").find("a")
                 if detail.find(class_="name").find("a"):    
                     d.place_url=place.get("href")
@@ -51,10 +57,10 @@ def fetch_yamato(num):
                 
                 data.details.append(d)
         res.append(data)
-    return res
+    return res[0]
 
 
 
 
 if __name__ == "__main__":
-    pprint(get_data(input()))
+    pprint(fetch_yamato(input()))

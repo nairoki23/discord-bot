@@ -1,10 +1,12 @@
 import requests				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 from pprint import pprint
-import utils
 from datetime import datetime
-from ..model.brand import Brand
 
+from ..model.state import State
+from ..model.detail import Detail
+from ..model.pack import Pack
+from ..utils import state_changer
 
 def fetch_jp(num):
     payload = {
@@ -31,7 +33,7 @@ def fetch_jp(num):
             continue
         place_name=tds[3].get_text()
         details.append(
-            utils.Detail(
+            Detail(
                 title=tds[1].get_text(),
                 time=datetime.strptime(tds[0].get_text(), "%Y/%m/%d %H:%M"),
                 place_name=place_name,
@@ -41,15 +43,16 @@ def fetch_jp(num):
         continue
     
     p_i=pack[0].find_all("td")
-    res=utils.Pack(
+    res=Pack(
         brand="jp",
         num=p_i[0].get_text(),
         type=p_i[1].get_text(),
         details=details,
         state_title=details[-1].title,
+        state_type=state_changer({"お届け先にお届け済み":State("arrival")},details[-1].title)
     )  
     return res
 
 
 if __name__ == "__main__":
-    pprint(get_data(input()))
+    pprint(fetch_jp(input()))

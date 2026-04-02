@@ -1,9 +1,12 @@
 import requests				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 from pprint import pprint
-import utils
 from datetime import datetime
-
+from ..utils import adjust_year
+from ..model.detail import Detail
+from ..model.pack import Pack
+from ..utils import state_changer
+from ..model.state import State
 
 def fetch_sagawa(num):
     payload = {
@@ -13,13 +16,14 @@ def fetch_sagawa(num):
 
     soup = bs(r.text, 'html.parser')
     print (soup)
-    res={}
     packs=soup.find("section",id="c01")#荷物ごとになる
     st= packs.find("dt",id="list1")
-    res=utils.Pack(
+    st_title=st.find("span",class_="state").get_text(strip=True)
+    res=Pack(
         brand="sagawa",
         num=st.find(class_="number nowrap").find("strong").get_text(strip=True),
-        state_title=st.find("span",class_="state").get_text(strip=True),
+        state_title=st_title,
+        state_type=state_changer({"配達完了":State("arrival")},st_title),
         state_summary=st.find("td",colspan="3").get_text(strip=True),
         details=[]
     )
@@ -33,13 +37,13 @@ def fetch_sagawa(num):
         if len(tds)!=3:
             continue
         res.details.append(
-            utils.Detail(
+            Detail(
                 title=tds[0].get_text(strip=True),
-                time=utils.adjust_year(datetime.strptime(f"{datetime.now().year}/{tds[1].get_text(strip=True)}", "%Y/%m/%d %H:%M")),
+                time=adjust_year(datetime.strptime(f"{datetime.now().year}/{tds[1].get_text(strip=True)}", "%Y/%m/%d %H:%M")),
                 place_name=tds[2].get_text(strip=True)
             )
         )
     return res
 
 if __name__ == "__main__":
-    pprint(get_data(input()))
+    pprint(fetch_sagawa(input()))

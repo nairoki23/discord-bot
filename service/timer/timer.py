@@ -1,7 +1,7 @@
 import asyncio
 import random
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from .job import Job
 
 class TimerService:

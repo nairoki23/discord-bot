@@ -90,7 +90,7 @@ class GmailCog(commands.Cog):
             print("GmailServiceは立ち上がりませんでした。")
             return False
         try:
-            self.service = get_gmail_service(self.auth.get_creds,self.bot.loop)
+            self.service = get_gmail_service(self.auth.get_creds)
             for h in HANDLERS:
                 self.service.set_handler(h(await self.sender()))
             self.service.setup_gmail_watch()

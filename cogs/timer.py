@@ -80,7 +80,7 @@ def send_cb(sender,description:str):
 class Timer(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.timer=get_timer(bot.loop)
+        self.timer=get_timer()
     # Slash Command の定義
     @discord.app_commands.command(name="timer", description="タイマー")
     async def timer(self, interaction: discord.Interaction,time:str,description:str="タイマー"):

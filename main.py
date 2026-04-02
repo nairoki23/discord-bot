@@ -2,7 +2,7 @@ from dotenv import dotenv_values
 import discord
 from discord.ext import commands
 from pathlib import Path
-
+from service.container  import set_loop
 
 
 # .env読み込み
@@ -43,6 +43,7 @@ async def on_ready():
 
 async def main():
     async with bot:
+        set_loop(bot.loop)#Service点火
         await bot.start(config.get("DISCORD_TOKEN"))
 
 import asyncio

@@ -1,33 +1,11 @@
-from dataclasses import dataclass,field
-
 from datetime import datetime,date,timedelta
-from .brand import Brand
-
-@dataclass
-class Detail:
-    title:str
-    place_name:str
-    time:datetime
-    place_url:str=""
-
-@dataclass
-class Pack:
-    brand:Brand
-    num:str
-    state_title:str
-    state_summary:str=""
-    state_note:str=""
-    type:str=""
-    name:str=""
-    est_date:date=None
-    details:list[Detail]=field(default_factory=list)
-
+from .model.state import State
 def adjust_year(dt):
     """
     datetime または date の年越しを補正する
     """
     today = datetime.now().date()
-    
+
     if isinstance(dt, datetime):
         d = dt.date()
         is_dt = True
@@ -43,3 +21,9 @@ def adjust_year(dt):
         dt = dt.replace(year=new_y)
 
     return dt
+
+def state_changer(dic,state):
+    if state in dic:
+        return dic[state]
+    else:
+        return State("other")
