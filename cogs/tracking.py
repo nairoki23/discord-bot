@@ -8,12 +8,14 @@ async def make_send(sender,pack:Pack|None):
     if pack is None:
         await sender("荷物の情報の取得に失敗。")
         return
+    print(pack.brand)
     em=Embed(
             title=pack.state_title,
-            description=pack.state_summary
+            description=pack.state_summary,
+            color={Brand.yamato:0xfccf00,Brand.sagawa:0x3B499F,Brand.jp:0xcc0000}[pack.brand]
         )
-    if len(pack.details)>0:
-        em.add_field(name=pack.details[-1].title,value=pack.details[-1].place_name+pack.details[-1].time.strftime('%d日 %H:%M'),inline=False)
+    for d in reversed(pack.details):
+        em.add_field(name=d.title,value=d.place_name+"\t"+d.time.strftime('%-d日 %-H:%-M'),inline=False)
     await sender(
         content=pack.name+"は"+pack.state_title+"です。",
         embed=em,
@@ -31,7 +33,7 @@ class Tracking(commands.Cog):
     @discord.app_commands.command(name="tracking-check", description="宅配状況の一回だけの確認")
     async def tracking_check(self, interaction: discord.Interaction,tracking_num:str,brand:Brand,name:str="名無しの荷物"):
         await interaction.response.defer()
-        data=self.track.fetch_pack(tracking_num,brand,name)
+        data=await self.track.fetch_pack(tracking_num,brand,name)
         await make_send(interaction.followup.send,data)
 
     @discord.app_commands.command(name="start-tracking", description="到着まで荷物を監視")

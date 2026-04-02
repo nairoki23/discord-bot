@@ -1,4 +1,4 @@
-import requests				# HTTP通信ライブラリ
+import aiohttp				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 from pprint import pprint
 from datetime import datetime
@@ -7,20 +7,28 @@ from ..model.detail import Detail
 from ..model.pack import Pack
 from ..utils import state_changer
 from ..model.state import State
+from ..model.brand import Brand
+import asyncio
 
-def fetch_sagawa(num):
+async def fetch_sagawa(num):
     payload = {
-        'okurijoNo':num,}
-    s = requests.Session()
-    r = s.get('https://k2k.sagawa-exp.co.jp/p/web/okurijosearch.do',params=payload)
+        "okurijoNo": num,
+    }
 
-    soup = bs(r.text, 'html.parser')
-    print (soup)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+                "https://k2k.sagawa-exp.co.jp/p/web/okurijosearch.do",
+                params=payload
+        ) as response:
+            text = await response.text()
+
+    soup = bs(text, 'html.parser')
+
     packs=soup.find("section",id="c01")#荷物ごとになる
     st= packs.find("dt",id="list1")
     st_title=st.find("span",class_="state").get_text(strip=True)
     res=Pack(
-        brand="sagawa",
+        brand=Brand("sagawa"),
         num=st.find(class_="number nowrap").find("strong").get_text(strip=True),
         state_title=st_title,
         state_type=state_changer({"配達完了":State("arrival")},st_title),
@@ -46,4 +54,4 @@ def fetch_sagawa(num):
     return res
 
 if __name__ == "__main__":
-    pprint(fetch_sagawa(input()))
+    pprint(asyncio.run(fetch_sagawa(input())))

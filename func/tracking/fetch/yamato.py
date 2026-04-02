@@ -4,27 +4,38 @@ from pprint import pprint
 from ..utils import adjust_year
 from ..model.detail import Detail
 from ..model.pack import Pack
+from ..model.brand import Brand
 from ..utils import state_changer
 from datetime import datetime,date
 from ..model.state import State
+import asyncio
+import re
 
-def fetch_yamato(num):
-    s = requests.Session()
-    payload={
-        "backrequest":"get",
-        "number01":num,
-        "category":"1"
-    }
-    r = s.post('https://toi.kuronekoyamato.co.jp/cgi-bin/tneko',data=payload)
-    print(r.text)
-    soup = bs(r.text,'html.parser')
+async def fetch(num):
+    async with aiohttp.ClientSession() as session:
+        payload = {
+            "backrequest": "get",
+            "number01": num,
+            "category": "1",
+        }
+
+        async with session.post("https://toi.kuronekoyamato.co.jp/cgi-bin/tneko", data=payload) as response:
+            if response.status != 200:
+                raise Exception(f"HTTP error: {response.status}")
+
+            text = await response.text()
+            return text
+
+async def fetch_yamato(num):
+    text=await fetch(num)
+    soup = bs(text,'html.parser')
     packs=soup.find_all(class_="parts-tracking-invoice-block")#荷物ごとになる
     res=[]
     for pack in packs:
         state=pack.find(class_="tracking-invoice-block-state")
         state_title=state.find(class_="tracking-invoice-block-state-title").get_text()
         data=Pack(
-            brand="yamato",
+            brand=Brand("yamato"),
             num=pack.find(class_="tracking-invoice-block-title").get_text().split("：")[1],
             state_title=state_title,
             state_type=state_changer({"配達完了":State("arrival")},state_title),
@@ -37,10 +48,23 @@ def fetch_yamato(num):
                 if s.find(class_="item").get_text().replace("：","")=="商品名":
                     data.type=s.find(class_="data").get_text()
                 elif s.find(class_="item").get_text().replace("：","")=="お届け予定日時":
-                    today = date.today()
-                    t=s.find(class_="data").get_text()
-                    if t!="-":
-                        data.est_date = adjust_year(datetime.strptime(f"{today.year}/{t}", "%Y/%m/%d").date())
+                    t = s.find(class_="data").get_text()
+                    if t != "-":
+                        t="03/22"
+                        t = t.replace('　', ' ').strip()
+                        today = date.today()
+                        # 日付取得
+                        date_match = re.search(r'(\d{2}/\d{2})', t)
+                        if not date_match:
+                            raise ValueError("日付が見つからない")
+                        date_part = date_match.group(1)
+                        # 時刻取得
+                        time_match = re.search(r'(\d{2}:\d{2})(?!.*\d{2}:\d{2})', t)
+                        if time_match:
+                            time_part = time_match.group(1)
+                            data.est_date=adjust_year(datetime.strptime(f"{today.year}/{date_part} {time_part}", "%Y/%m/%d %H:%M"))
+                        else:
+                            data.est_date = adjust_year(datetime.strptime(f"{today.year}/{date_part}", "%Y/%m/%d").date())
 
         details=pack.find(class_="tracking-invoice-block-detail")#進み具合
         if details:
@@ -63,4 +87,4 @@ def fetch_yamato(num):
 
 
 if __name__ == "__main__":
-    pprint(fetch_yamato(input()))
+    pprint(asyncio.run(fetch_yamato(input())))

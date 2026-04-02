@@ -1,4 +1,3 @@
-from html5lib.treewalkers import pprint
 from .model.brand import Brand
 from .fetch.yamato import fetch_yamato
 from .fetch.sagawa import fetch_sagawa
@@ -9,6 +8,7 @@ from datetime import datetime, timedelta
 from nanoid import generate
 from .model.state import State
 import asyncio
+
 
 
 FETCH_DELTA=timedelta(minutes=20)
@@ -22,25 +22,21 @@ class Tracking:
         self.job_id=""
         self.name=name
 
-    def fetch_pack(self) -> Pack|None:
+    async def fetch_pack(self) -> Pack|None:
         pack=None
-        try:
-            if self.brand=="yamato":
-                pack= fetch_yamato(self.tracking_num)
-            elif self.brand == "sagawa":
-                pack= fetch_sagawa(self.tracking_num)
-            elif self.brand=="jp":
-                pack= fetch_jp(self.tracking_num)
-            else:
-                return None
-        except Exception as e:
-            print(e)
+        if self.brand==Brand.yamato:
+            pack= await fetch_yamato(self.tracking_num)
+        elif self.brand == Brand.sagawa:
+            pack= await fetch_sagawa(self.tracking_num)
+        elif self.brand==Brand.jp:
+            pack= await fetch_jp(self.tracking_num)
+        else:
+            return None
         pack.name=self.name
-        pprint(pack)
 
         return pack
-    def set_track(self):
-        self.latest_pack=self.fetch_pack()
+    async def set_track(self):
+        self.latest_pack=await self.fetch_pack()
         self.job_id=get_timer().schedule(datetime.now()+FETCH_DELTA,self.timer_cb,FETCH_JITTER)
         return self.latest_pack
 
@@ -60,7 +56,7 @@ class Tracking:
         return True
 
     async def timer_cb(self):
-        now_pack=self.fetch_pack()
+        now_pack=await self.fetch_pack()
         if now_pack:
             if (self.latest_pack is None) or (len(now_pack.details)!=len(self.latest_pack.details)) or (now_pack.details[-1]!=self.latest_pack.details[-1]) or (now_pack.state_title!=self.latest_pack.state_title):
                 for cb in self.cb.values():
@@ -77,8 +73,8 @@ class Tracking:
 class Track:
     def __init__(self):
         self.trackings=[]
-    def fetch_pack(self,tracking_num,brand,name):
-        return Tracking(tracking_num,brand,name).fetch_pack()
+    async def fetch_pack(self,tracking_num,brand,name):
+        return await Tracking(tracking_num,brand,name).fetch_pack()
     def start_track(self,tracking_num,brand,sender):
         self.fetch_pack(tracking_num,brand)
 

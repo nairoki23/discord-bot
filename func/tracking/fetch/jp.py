@@ -1,20 +1,26 @@
-import requests				# HTTP通信ライブラリ
+import aiohttp				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 from pprint import pprint
 from datetime import datetime
-
+import asyncio
 from ..model.state import State
 from ..model.detail import Detail
 from ..model.pack import Pack
+from ..model.brand import Brand
 from ..utils import state_changer
 
-def fetch_jp(num):
+
+async def fetch_jp(num):
     payload = {
         'reqCodeNo1':num,}
-    s = requests.Session()
-    r = s.get('https://trackings.post.japanpost.jp/services/srv/search/direct?locale=ja',params=payload)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+                'https://trackings.post.japanpost.jp/services/srv/search/direct?locale=ja',
+                params=payload
+        ) as response:
+            text = await response.text()
 
-    soup = bs(r.text, 'html.parser')
+    soup = bs(text, 'html.parser')
     pack=soup.find("div",class_="indent").find_all("table")
     kyoku={}
     for p in pack[2].find_all("tr"):
@@ -44,7 +50,7 @@ def fetch_jp(num):
     
     p_i=pack[0].find_all("td")
     res=Pack(
-        brand="jp",
+        brand=Brand("jp"),
         num=p_i[0].get_text(),
         type=p_i[1].get_text(),
         details=details,
@@ -55,4 +61,4 @@ def fetch_jp(num):
 
 
 if __name__ == "__main__":
-    pprint(fetch_jp(input()))
+    pprint(asyncio.run(fetch_jp(input())))
