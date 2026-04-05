@@ -13,8 +13,8 @@ import asyncio
 from urllib.parse import urlparse,parse_qs
 
 
-FETCH_DELTA=timedelta(minutes=1)
-FETCH_JITTER=timedelta(minutes=5)
+FETCH_DELTA=timedelta(minutes=20)
+FETCH_JITTER=timedelta(minutes=10)
 class Tracking:
     def __init__(self,tracking_num:str,brand:Brand,name:str):
         self.latest_pack:Pack|None=None
