@@ -71,7 +71,7 @@ async def fetch_yamato(num):
             data.details=[]
             for detail in details.find_all("li"):
                 now = datetime.now()
-                d=Detail(title=detail.find(class_="item").get_text(),time=adjust_year(datetime.strptime(f"{now.year}年{detail.find(class_="date").get_text()}", "%Y年%m月%d日 %H:%M")),place_name="")
+                d=Detail(title=detail.find(class_="item").get_text(),time=adjust_year(datetime.strptime(f"{now.year}年{detail.find(class_='date').get_text()}", "%Y年%m月%d日 %H:%M")),place_name="")
                 place=detail.find(class_="name").find("a")
                 if detail.find(class_="name").find("a"):    
                     d.place_url=place.get("href")

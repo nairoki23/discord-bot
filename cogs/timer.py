@@ -90,5 +90,14 @@ class Timer(commands.Cog):
             await interaction.response.send_message(format_timedelta_ja(parsed_time)+"後に"+description)
         except Exception as e:
             print(e)
+
+    @discord.app_commands.command(name="timer_list", description="内部含む全タイマーstate")
+    async def timer_list(self, interaction: discord.Interaction,):
+        text="timers\n"
+        あ=self.timer.list_jobs()
+        print(あ)
+        for b in あ:
+            text+=str(b)+":"+str(あ[b]["status"])+"\n"
+        await interaction.response.send_message(text)
 async def setup(bot: commands.Bot):
     await bot.add_cog(Timer(bot))
