@@ -58,7 +58,7 @@ class Tracking:
     async def timer_cb(self):
         now_pack=await self.fetch_pack()
         if now_pack:
-            if (self.latest_pack is None) or (len(now_pack.details)!=len(self.latest_pack.details)) or (now_pack.details[-1]!=self.latest_pack.details[-1]) or (now_pack.state_title!=self.latest_pack.state_title):
+            if ((self.latest_pack is None)and (now_pack is not None)) or (len(now_pack.details)!=len(self.latest_pack.details)) or (now_pack.details[-1]!=self.latest_pack.details[-1]) or (now_pack.state_title!=self.latest_pack.state_title):
                 for cb in self.cb.values():
                     result=cb(self.latest_pack)
                     if asyncio.iscoroutine(result):
@@ -93,6 +93,8 @@ class Track:
             # 日本郵便
             if "requestNo1" in query:
                 return query["requestNo1"][0]
+            elif "reqCodeNo1" in query:
+                return query["reqCodeNo1"][0]
             # ヤマト
             if "no01" in query:
                 return query["no01"][0]

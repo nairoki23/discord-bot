@@ -74,6 +74,5 @@ class Tracking(commands.Cog):
         self.tarck_ch_dict[brand][tracking_num]={
             cb_id:ch.id
         }
-
 async def setup(bot: commands.Bot):
     await bot.add_cog(Tracking(bot))
