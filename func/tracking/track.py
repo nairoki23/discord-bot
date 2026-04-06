@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from .model.brand import Brand
 from .fetch.yamato import fetch_yamato
 from .fetch.sagawa import fetch_sagawa
@@ -46,6 +48,7 @@ class Tracking:
             cb_id=str(generate(size=8))
             if cb_id not in self.cb:
                 break
+
         self.cb[cb_id] = cb
         return cb_id
 
@@ -57,8 +60,9 @@ class Tracking:
 
     async def timer_cb(self):
         now_pack=await self.fetch_pack()
+        pprint(now_pack)
         if now_pack:
-            if ((self.latest_pack is None)and (now_pack is not None)) or (len(now_pack.details)!=len(self.latest_pack.details)) or (now_pack.details[-1]!=self.latest_pack.details[-1]) or (now_pack.state_title!=self.latest_pack.state_title):
+            if ((self.latest_pack is None)and (now_pack is not None)) or (len(now_pack.details)!=len(self.latest_pack.details)) or (now_pack.details[-1].title!=self.latest_pack.details[-1].title) or (now_pack.state_title!=self.latest_pack.state_title) or (now_pack.state_type)==State.arrival:
                 for cb in self.cb.values():
                     result=cb(self.latest_pack)
                     if asyncio.iscoroutine(result):
@@ -125,9 +129,13 @@ class Track:
     async def start_track(self,tracking_num,brand,name,cb):
         if tracking_num in self.trackings[brand]:
             return None
-        self.trackings[brand][tracking_num]=Tracking(tracking_num,brand,name)
-        cb_id=self.trackings[brand][tracking_num].set_cb(cb)
-        await self.trackings[brand][tracking_num].set_track()
+        try:
+            self.trackings[brand][tracking_num]=Tracking(tracking_num,brand,name)
+            cb_id=self.trackings[brand][tracking_num].set_cb(cb)
+            await self.trackings[brand][tracking_num].set_track()
+            #await self.trackings[brand][tracking_num].timer_cb()
+        except Exception as e:
+            print(e)
         return cb_id
 
     async def add_cb(self,tracking_num,brand,cb):

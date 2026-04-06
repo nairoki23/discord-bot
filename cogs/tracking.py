@@ -25,7 +25,7 @@ class Tracking(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.track=get_track()
-        self.tarck_ch_dict={
+        self.track_ch_dict={
             Brand.yamato:{},
             Brand.sagawa:{},
             Brand.jp:{},
@@ -33,7 +33,7 @@ class Tracking(commands.Cog):
     # Slash Command の定義
 
 
-    async def make_cb(self,sender):
+    def make_cb(self,sender):
         async def cb(pack:Pack|None):
             if pack is None:
                 await sender(conten="荷物取得エラー。")
@@ -48,6 +48,7 @@ class Tracking(commands.Cog):
                     content=pack.name + "の配達状況が更新されました。",
                     embed=em,
                 )
+        print("callback返し")
         return cb
 
 
@@ -66,13 +67,39 @@ class Tracking(commands.Cog):
         )
 
     @discord.app_commands.command(name="start-tracking", description="到着まで荷物を監視")
-    async def start_tracking(self, interaction: discord.Interaction,tracking_num:str,brand:Brand,name:str="名無しの荷物"):
+    async def start_tracking(self, interaction: discord.Interaction,tracking_num:str,brand:Brand|None=None,name:str="名無しの荷物"):
         await interaction.response.defer()
-        ch=interaction.response.channel
         brand, tracking_num = self.track.parse_tracking(tracking_num, brand)
-        cb_id=await self.track.start_track(tracking_num,brand,name,self.make_cb(ch.send))
-        self.tarck_ch_dict[brand][tracking_num]={
-            cb_id:ch.id
-        }
+        ch=interaction.channel
+        try:
+            cb_id=await self.track.start_track(tracking_num,brand,name,self.make_cb(ch.send))
+            self.track_ch_dict[brand][tracking_num]={
+                cb_id:ch.id
+            }
+        except Exception as e:
+            print(e)
+        await interaction.followup.send(
+            content="tracking開始"
+        )
+
+
+
+
+    @discord.app_commands.command(name="tracking-list", description="現状の監視リスト")
+    async def tracking_list(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        text=""
+        for b in self.track_ch_dict:
+            text+=str(b)+"\n"
+            for code in self.track_ch_dict[b]:
+                text+=str(code)+"\n"
+            text+="\n\n"
+
+        await interaction.followup.send(
+            content=text,
+        )
+
+
+
 async def setup(bot: commands.Bot):
     await bot.add_cog(Tracking(bot))
