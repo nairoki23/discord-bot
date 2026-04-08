@@ -1,4 +1,6 @@
-import aiohttp				# HTTP通信ライブラリ
+import aiohttp
+import ssl
+# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 from pprint import pprint
 from ..utils import adjust_year
@@ -11,6 +13,24 @@ from ..model.state import State
 import asyncio
 import re
 
+def create_ssl_context():
+    ctx = ssl.create_default_context()
+
+    # 記事と同じポイント：AESGCMを許可
+    ctx.set_ciphers(
+        '@SECLEVEL=2:'
+        'ECDH+AESGCM:'
+        'ECDH+CHACHA20:'
+        'ECDH+AES:'
+        'DHE+AES:'
+        'AESGCM:'
+        '!aNULL:!eNULL:!aDSS:!SHA1:!AESCCM:!PSK'
+    )
+    return ctx
+
+
+
+
 async def fetch(num):
     async with aiohttp.ClientSession() as session:
         payload = {
@@ -19,7 +39,8 @@ async def fetch(num):
             "category": "1",
         }
 
-        async with session.post("https://toi.kuronekoyamato.co.jp/cgi-bin/tneko", data=payload) as response:
+        async with session.post("https://toi.kuronekoyamato.co.jp/cgi-bin/tneko", data=payload,ssl=create_ssl_context()
+) as response:
             if response.status != 200:
                 raise Exception(f"HTTP error: {response.status}")
 
