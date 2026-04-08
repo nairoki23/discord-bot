@@ -33,27 +33,23 @@ class Tracking(commands.Cog):
     # Slash Command の定義
 
 
-    def make_cb(self,sender):
+    def make_cb(self,ch_id):
         async def cb(pack:Pack|None):
+            ch = self.bot.get_channel(ch_id)
             if pack is None:
-                await sender(conten="荷物取得エラー。")
+                await ch.send(conten="荷物取得エラー。")
             em=make_embed(pack)
             if pack.state_type==State.arrival:
-                await sender(
+                await ch.send(
                     content=pack.name+"が到着しました。\n追跡を終了します。",
                     embed=em
                 )
             else:
-                await sender(
+                await ch.send(
                     content=pack.name + "の配達状況が更新されました。",
                     embed=em,
                 )
-        print("callback返し")
         return cb
-
-
-
-
 
 
     @discord.app_commands.command(name="tracking-check", description="宅配状況の一回だけの確認")
@@ -72,7 +68,7 @@ class Tracking(commands.Cog):
         brand, tracking_num = self.track.parse_tracking(tracking_num, brand)
         ch=interaction.channel
         try:
-            cb_id=await self.track.start_track(tracking_num,brand,name,self.make_cb(ch.send))
+            cb_id=await self.track.start_track(tracking_num,brand,name,self.make_cb(ch.id))
             self.track_ch_dict[brand][tracking_num]={
                 cb_id:ch.id
             }
