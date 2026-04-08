@@ -62,7 +62,7 @@ class Tracking:
         now_pack=await self.fetch_pack()
         pprint(now_pack)
         if now_pack:
-            if ((self.latest_pack is None)and (now_pack is not None)) or (len(now_pack.details)!=len(self.latest_pack.details)) or (now_pack.details[-1].title!=self.latest_pack.details[-1].title) or (now_pack.state_title!=self.latest_pack.state_title) or (now_pack.state_type)==State.arrival:
+            if ((self.latest_pack is None)and (now_pack is not None)) or (len(now_pack.details)!=len(self.latest_pack.details)) or ((len(now_pack.details)>=1) and(now_pack.details[-1].title!=self.latest_pack.details[-1].title)) or (now_pack.state_title!=self.latest_pack.state_title) or (now_pack.state_type)==State.arrival:
                 for cb in self.cb.values():
                     result=cb(self.latest_pack)
                     if asyncio.iscoroutine(result):
@@ -133,7 +133,7 @@ class Track:
             self.trackings[brand][tracking_num]=Tracking(tracking_num,brand,name)
             cb_id=self.trackings[brand][tracking_num].set_cb(cb)
             await self.trackings[brand][tracking_num].set_track()
-            #await self.trackings[brand][tracking_num].timer_cb()
+            await self.trackings[brand][tracking_num].timer_cb()
         except Exception as e:
             print(e)
         return cb_id
