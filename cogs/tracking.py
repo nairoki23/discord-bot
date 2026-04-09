@@ -56,6 +56,11 @@ class Tracking(commands.Cog):
     async def tracking_check(self, interaction: discord.Interaction,tracking_num:str,brand:Brand|None=None,name:str="名無しの荷物"):
         await interaction.response.defer()
         brand, tracking_num = self.track.parse_tracking(tracking_num, brand)
+        if brand is None:
+            await interaction.followup.send(
+                content="配送業者が定まりませんでした。",
+            )
+            return
         data=await self.track.fetch_pack(tracking_num,brand,name)
         await interaction.followup.send(
             content=data.name + "は" + data.state_title + "です。",
@@ -66,6 +71,11 @@ class Tracking(commands.Cog):
     async def start_tracking(self, interaction: discord.Interaction,tracking_num:str,brand:Brand|None=None,name:str="名無しの荷物"):
         await interaction.response.defer()
         brand, tracking_num = self.track.parse_tracking(tracking_num, brand)
+        if brand is None:
+            await interaction.followup.send(
+                content="配送業者が定まりませんでした。",
+            )
+            return
         ch=interaction.channel
         try:
             cb_id=await self.track.start_track(tracking_num,brand,name,self.make_cb(ch.id))
