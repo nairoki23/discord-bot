@@ -1,11 +1,16 @@
 from service.gmail.HandlerBase import BaseHandler
 import base64
+from discord import Embed, Color
 
-class MyHandler(BaseHandler):
-    def __init__(self, sender):
-        # 親クラスの初期化（self.bot = bot が実行される）
+
+class GenericHandler(BaseHandler):
+    """
+    動的に追跡メルアドを登録するための汎用ハンドラー。
+    整形はせず、件名・送り主・本文をEmbedで見やすく表示する。
+    """
+    def __init__(self, sender, address):
         super().__init__(sender)
-        self.address=""
+        self.address = address
 
     def extract_body(self, payload):
         """
@@ -20,7 +25,7 @@ class MyHandler(BaseHandler):
                 if part.get("mimeType") == "text/plain":
                     body_data = part.get("body", {}).get("data", "")
                     break
-            
+
             # 2. なければ子パートを再帰的に探索
             if not body_data:
                 for part in payload["parts"]:
@@ -28,7 +33,7 @@ class MyHandler(BaseHandler):
                         body_data = self.extract_body(part)
                         if body_data:
                             break
-            
+
             # 3. それでもなければHTML(text/html)を探す
             if not body_data:
                 for part in payload["parts"]:
@@ -38,7 +43,6 @@ class MyHandler(BaseHandler):
 
         if body_data:
             try:
-                # urlsafe_b64decode でデコードし、UTF-8文字列に変換
                 return base64.urlsafe_b64decode(body_data).decode("utf-8", errors="replace")
             except Exception as e:
                 print(f"Base64 decoding error: {e}")
@@ -52,11 +56,26 @@ class MyHandler(BaseHandler):
             text = self.extract_body(payload)
         except Exception as e:
             print(f"Body extraction error: {e}")
-            
+
         if not text:
             text = "(本文なし)"
-        print(text)
-        print(details["subject"])
+
+        # 2000文字制限に収める
+        if len(text) > 1800:
+            text = text[:1800] + "\n…(省略)"
+
+        subject = details.get("subject", "(件名なし)")
+        sender = details.get("from", "(不明)")
+
+        embed = Embed(
+            title=subject,
+            description=text,
+            color=Color.blue(),
+        )
+        embed.add_field(name="差出人", value=sender, inline=False)
+        embed.set_footer(text=f"追跡対象: {self.address}")
+
         await self.sender(
-            content="Subject: " + details["subject"] + "\n" + text,
+            content=f"📩 **{subject}**",
+            embed=embed,
         )
