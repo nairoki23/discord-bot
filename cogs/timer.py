@@ -97,7 +97,7 @@ class Timer(commands.Cog):
         あ=self.timer.list_jobs()
         print(あ)
         for b in あ:
-            text+=str(b)+":"+str(あ[b]["status"])+"\n"
+            text+=str(b)+":"+str(あ[b]["status"])+"\n"+str(あ[b]["next_run"])+"\n\n"
         await interaction.response.send_message(text)
 async def setup(bot: commands.Bot):
     await bot.add_cog(Timer(bot))
