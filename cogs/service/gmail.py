@@ -6,6 +6,7 @@ import utils.gmail_handlers as handlers
 from dotenv import dotenv_values
 config = dotenv_values(".env")
 TARGET_CHANNNEL_ID = int(config.get("NOTIFICATION_CHANNEL_ID"))
+ENV_TRACK_ADDRESSES = [a.strip() for a in config.get("GMAIL_TRACK_ADDRESSES", "").split(",") if a.strip()]
 
 HANDLERS =(
     handlers.chibabank.ChibabankHandler,
@@ -85,6 +86,20 @@ class GmailCog(commands.Cog):
                 return None
         return ch.send
         
+    async def _load_env_tracked_addresses(self):
+        """.envのGMAIL_TRACK_ADDRESSESから追跡対象を自動登録する"""
+        for address in ENV_TRACK_ADDRESSES:
+            if address in self.tracked_addresses:
+                print(f"[Gmail] {address} は既に追跡中のためスキップ")
+                continue
+            handler = handlers.generic.GenericHandler(await self.sender(), address)
+            result = self.service.set_handler(handler)
+            if result:
+                self.tracked_addresses.append(address)
+                print(f"[Gmail] .envから追跡対象を自動登録: {address}")
+            else:
+                print(f"[Gmail] .envからの自動登録に失敗: {address}")
+
     async def cog_load(self):#関数名的に起動時に一回呼ばれる
         creds=self.auth.get_creds()
         if creds is None:
@@ -101,6 +116,8 @@ class GmailCog(commands.Cog):
             print(f"Error occurred while setting up GmailService: {e}")
             return False
         print("GmailServiceが立ち上がったよ！")
+        # .envの追跡対象を自動登録
+        await self._load_env_tracked_addresses()
         return True
     
     @tasks.loop(hours=24.0)

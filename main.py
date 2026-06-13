@@ -31,7 +31,7 @@ class MyBot(commands.Bot):
         # スラッシュコマンドの同期
         guild = discord.Object(id=config.get("TEST_GUILD"))
         self.tree.copy_global_to(guild=guild)
-        await self.tree.sync(guild=guild)#TestGuildにすぐ反映
+        #await self.tree.sync(guild=guild)#TestGuildにすぐ反映
         await self.tree.sync()#全Guildにいずれ浸透
         print("Cogs loaded and Tree synced.")
 
