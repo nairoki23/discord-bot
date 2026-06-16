@@ -61,8 +61,8 @@ class GenericHandler(BaseHandler):
             text = "(本文なし)"
 
         # 2000文字制限に収める
-        if len(text) > 1800:
-            text = text[:1800] + "\n…(省略)"
+        if len(text) > 500:
+            text = text[:500] + "\n…(省略)"
 
         subject = details.get("subject", "(件名なし)")
         sender = details.get("from", "(不明)")
