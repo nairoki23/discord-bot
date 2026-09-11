@@ -1,4 +1,4 @@
-from service.gmail.HandlerBase import BaseHandler
+from service.google.gmail.handler_base import BaseHandler
 import base64
 from discord import Embed, Color
 

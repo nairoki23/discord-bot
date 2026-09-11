@@ -17,7 +17,8 @@ class MyBot(commands.Bot):
         base = Path("./cogs")
 
         for path in base.rglob("*.py"):
-            if path.name.startswith("_"):
+            # _google_auth.py intentionally provides the shared Google OAuth cog.
+            if path.name.startswith("_") and path.name != "_google_auth.py":
                 continue
 
             # cogs.xxx.yyy 形式に変換
