@@ -11,6 +11,7 @@ from service.google.gmail.handler_base import BaseHandler
 
 CHIBABANK_ADDRESS = "mail@vdebit.chibabank.co.jp"
 VIEWCARD_ADDRESS = "viewcard@mail.viewsnet.jp"
+JCB_ADDRESS = "mail@qa.jcb.co.jp"
 
 MERCHANT_ALIASES = {
     "4015852TOMIBUNKIYOMIDAITE": "富分清見台店",
@@ -33,12 +34,14 @@ MERCHANT_ALIASES = {
     "CLOUDFLARE": "Cloudflare",
     "VisaMobile2Cashback": "Visa割キャッシュバック",
 }
-
+ISSUER_ALIASES = {
+    "ＪＡＬカードｎａｖｉ":"JALカードnavi"
+}
 
 class CreditCardHandler(BaseHandler):
     """カード会社ごとのメールを解析し、同じ通知レイアウトで送信する。"""
 
-    ADDRESSES = (CHIBABANK_ADDRESS, VIEWCARD_ADDRESS)
+    ADDRESSES = (CHIBABANK_ADDRESS, VIEWCARD_ADDRESS, JCB_ADDRESS)
 
     def __init__(self, sender, address):
         super().__init__(sender)
@@ -109,14 +112,35 @@ class CreditCardHandler(BaseHandler):
             "type": self._match(text, r"・ 利用種別\s*：\s*(.+)", ""),
         }
 
+    def _paser_jcbcard(self, subject, text):
+        is_confirmed = subject == "（売上到着分）JCBカード/ショッピングご利用のお知らせ"
+        if subject not in {
+            "JCBカード／ショッピングご利用のお知らせ",
+            "（売上到着分）JCBカード/ショッピングご利用のお知らせ",
+        }:
+            return None
+
+        return {
+            "issuer": self._match(text, r"カード名称\s*：\s*(.+)", "JCBカード"),
+            "kind": "利用確定" if is_confirmed else "利用",
+            "merchant": self._match(text, r"【ご利用先】\s*(.+)"),
+            "amount": self._match(text, r"【ご利用金額】\s*([\d,]+円)", "0円"),
+            "date": self._match(
+                text,
+                r"【(?:ご利用日時\(日本時間\)|ご利用日)】\s*(.+)",
+            ),
+        }
+
     def _parse(self, subject, text):
         if self.address == CHIBABANK_ADDRESS:
             return self._parse_chibabank(subject, text)
-        return self._parse_viewcard(subject, text)
+        if self.address == VIEWCARD_ADDRESS:
+            return self._parse_viewcard(subject, text)
+        return self._paser_jcbcard(subject, text)
 
     @staticmethod
     def _parse_timestamp(value):
-        for pattern in ("%Y/%m/%d %H:%M:%S", "%Y/%m/%d"):
+        for pattern in ("%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M", "%Y/%m/%d"):
             try:
                 return datetime.strptime(value, pattern)
             except ValueError:
@@ -132,6 +156,9 @@ class CreditCardHandler(BaseHandler):
 
         notification["merchant"] = MERCHANT_ALIASES.get(
             notification["merchant"], notification["merchant"]
+        )
+        notification["issuer"] = ISSUER_ALIASES.get(
+            notification["issuer"],notification["issuer"]
         )
         is_refund = notification["kind"] == "返金"
         action = "返金がありました" if is_refund else "利用しました"

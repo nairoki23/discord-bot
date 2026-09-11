@@ -8,6 +8,7 @@ import utils.gmail_handlers as handlers
 from dotenv import dotenv_values
 config = dotenv_values(".env")
 TARGET_CHANNNEL_ID = int(config.get("NOTIFICATION_CHANNEL_ID"))
+CREDIT_CARD_THREAD_ID = int(config.get("CREDIT_CARD_THREAD_ID", "0") or 0)
 ENV_TRACK_ADDRESSES = [a.strip() for a in config.get("GMAIL_TRACK_ADDRESSES", "").split(",") if a.strip()]
 
 HANDLERS = (handlers.my.MyHandler,)
@@ -20,11 +21,11 @@ class GmailCog(commands.Cog):
         self.process=None
         self.tracked_addresses=[]  # 動的追跡中のアドレス一覧
         self.setup_gmail_watch.start()
-    async def sender(self):
-        ch = self.bot.get_channel(TARGET_CHANNNEL_ID)
+    async def sender(self, channel_id=TARGET_CHANNNEL_ID):
+        ch = self.bot.get_channel(channel_id)
         if not ch:
             try:
-                ch=await self.bot.fetch_channel(TARGET_CHANNNEL_ID)
+                ch=await self.bot.fetch_channel(channel_id)
             except Exception as e:
                 print(f"チャンネル取得失敗: {e}")
                 return None
@@ -54,8 +55,13 @@ class GmailCog(commands.Cog):
             sender = await self.sender()
             for handler_class in HANDLERS:
                 self.service.set_handler(handler_class(sender))
+            credit_card_sender = await self.sender(
+                CREDIT_CARD_THREAD_ID or TARGET_CHANNNEL_ID
+            )
             for address in handlers.credit_card.CreditCardHandler.ADDRESSES:
-                self.service.set_handler(handlers.credit_card.CreditCardHandler(sender, address))
+                self.service.set_handler(
+                    handlers.credit_card.CreditCardHandler(credit_card_sender, address)
+                )
             self.service.setup_gmail_watch()
             self.service.start_listening()
 

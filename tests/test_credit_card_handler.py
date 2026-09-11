@@ -3,6 +3,7 @@ import unittest
 
 from utils.gmail_handlers.credit_card import (
     CHIBABANK_ADDRESS,
+    JCB_ADDRESS,
     VIEWCARD_ADDRESS,
     CreditCardHandler,
 )
@@ -77,6 +78,68 @@ class CreditCardHandlerTests(unittest.IsolatedAsyncioTestCase):
             ("利用者", "本人"),
             ("種別", "一回払い"),
         ])
+
+    async def test_jcb_usage_uses_the_common_notification_layout(self):
+        sent = []
+
+        async def sender(**kwargs):
+            sent.append(kwargs)
+
+        handler = CreditCardHandler(sender, JCB_ADDRESS)
+        await handler.handle({
+            "subject": "JCBカード／ショッピングご利用のお知らせ",
+            "payload": encoded_payload(
+                "カード名称　：　ＪＡＬカードｎａｖｉ\n"
+                "【ご利用日時(日本時間)】　2026/09/10 11:29\n"
+                "【ご利用金額】　5,680円\n"
+                "【ご利用先】　ウエンデイ－ズフア－ストキツチン"
+            ),
+        })
+
+        embed = sent[0]["embed"]
+        self.assertEqual(embed.title, "カード利用通知")
+        self.assertEqual(embed.timestamp.strftime("%Y/%m/%d %H:%M"), "2026/09/10 11:29")
+        self.assertEqual(
+            sent[0]["content"],
+            "ウエンデイ－ズフア－ストキツチンで5,680円 利用しました",
+        )
+        self.assertEqual(
+            [(field.name, field.value) for field in embed.fields],
+            [
+                ("カード", "JALカードnavi"),
+                ("金額", "5,680円"),
+                ("利用先", "ウエンデイ－ズフア－ストキツチン"),
+            ],
+        )
+
+    async def test_jcb_confirmed_usage_uses_the_common_notification_layout(self):
+        sent = []
+
+        async def sender(**kwargs):
+            sent.append(kwargs)
+
+        handler = CreditCardHandler(sender, JCB_ADDRESS)
+        await handler.handle({
+            "subject": "（売上到着分）JCBカード/ショッピングご利用のお知らせ",
+            "payload": encoded_payload(
+                "カード名称　：　ＪＡＬカードｎａｖｉ\n"
+                "【ご利用日】　2026/09/03\n"
+                "【ご利用金額】　 300円\n"
+                "【ご利用先】　東京メトロ　交通利用"
+            ),
+        })
+
+        embed = sent[0]["embed"]
+        self.assertEqual(embed.title, "カード利用確定通知")
+        self.assertEqual(sent[0]["content"], "東京メトロ　交通利用で300円 利用しました")
+        self.assertEqual(
+            [(field.name, field.value) for field in embed.fields],
+            [
+                ("カード", "JALカードnavi"),
+                ("金額", "300円"),
+                ("利用先", "東京メトロ　交通利用"),
+            ],
+        )
 
     async def test_unrelated_subject_does_not_send_a_notification(self):
         sent = []
