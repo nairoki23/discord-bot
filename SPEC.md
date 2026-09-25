@@ -46,7 +46,6 @@ main.py                 Bot 本体。cogs/ 以下を自動ロードし、スラ�
 cogs/                   Discord との接点（コマンド・イベントリスナー）。1 ファイル = 1 Cog。funcやserviceに依存
   service/              Google 系の Cog（_google_auth.py, gmail.py）
 func/                   機能ごとのドメインロジック。Discordに依存しない、serviceに依存する（スクレイピング、予定計算など）
-  class_schedule/       授業日程 JSON とその計算
   tracking/             宅配追跡（fetch/ = 業者別スクレイパ, model/ = データ型）
   ymobile/              Y!mobile マイページのスクレイピング
 service/                長寿命のサービス。service同士依存しない。（シングルトン）
@@ -87,7 +86,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 
 `utils/check_user.interaction_user(interaction)` が `USER` に含まれるユーザーかを判定し、含まれなければ「実行権限がありません」を ephemeral で返して `False`。
 付いているコマンド: `/today` `/calendar_week` `/calendar_add` `/usage` `/google_auth` `/gmail_*` 全部。
-**付いていない**コマンド: `/ping` `/boot-time` `/class` 系 `/timer` 系 `/tracking` 系 `/spending`。
+**付いていない**コマンド: `/ping` `/boot-time` `/timer` 系 `/tracking` 系 `/spending`。
 
 ## 4. テスト
 
