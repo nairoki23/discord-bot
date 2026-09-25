@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.gcp_keys/**)",
+      "Edit(**/.env)",
+      "Edit(**/.gcp_keys/**)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git reset --hard *)",
+      "Bash(sudo *)",
+      "Bash(systemctl *)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowUnsandboxedCommands": false,
+    "excludedCommands": [
+      "git push *"
+    ],
+    "filesystem": {
+      "denyRead": [
+        "./.env",
+        "./.gcp_keys"
+      ]
+    },
+    "network": {
+      "allowedDomains": [
+        "pypi.org",
+        "files.pythonhosted.org"
+      ],
+      "deniedDomains": [
+        "github.com",
+        "*.github.com"
+      ]
+    }
+  }
+}
