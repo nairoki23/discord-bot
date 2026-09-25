@@ -95,3 +95,11 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 - `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、対象外件名の無視。
 - 実行: リポジトリ直下で `python -m unittest`（`.env` の `USER` などが読める状態で、Python 3.10+ と依存パッケージが必要）。
   - 現在の `venv/` は Python 3.9 で依存も未インストールのため、そのままでは失敗する。
+
+# 5. 開発フロー
+main branch:うごいてるやつ
+dev branch:開発版
+feat/* :機能追加
+fix/* :バグ修正
+など
+機能追加やバグ修正はdevからブランチ切ってdevにPR
