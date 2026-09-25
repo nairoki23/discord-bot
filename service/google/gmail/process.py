@@ -49,6 +49,16 @@ class GmailProcess:
             print(f"Failed to fetch Gmail message {msg_id}: {exc}")
             return None
 
+    def mark_as_read(self, msg_id):
+        try:
+            self.service().users().messages().modify(
+                userId="me", id=msg_id, body={"removeLabelIds": ["UNREAD"]}
+            ).execute()
+            return True
+        except Exception as exc:
+            print(f"Failed to mark Gmail message {msg_id} as read: {exc}")
+            return False
+
     async def process_message(self, msg_id):
         if msg_id in self.msg_ids:
             print(f"Skipping already processed message: {msg_id}")

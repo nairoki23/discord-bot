@@ -31,7 +31,8 @@ Gmail の新着メールを Pub/Sub で受け取り、送信元アドレスご�
 - 状態（history ID、処理済み ID、handler）はメモリ上のみ。再起動中に届いたメールは処理されない。
 - `history.list` が失敗（history 期限切れなど）した場合はその通知分を捨てる。
 - ack は処理前に行うので、処理中の例外で再配信はされない。
-- スコープは `gmail.readonly`。送信・ラベル変更などはできない（必要なら `service/google/auth.py` のスコープ追加と再認証が必要）。
+- スコープは `gmail.modify`。ラベル変更（既読化など）は可能だが、送信・完全削除などはできない（必要なら `service/google/auth.py` のスコープ追加と再認証が必要）。
+- `GmailProcess.mark_as_read(msg_id)`（`GmailService.mark_as_read(msg_id)` 経由でも可）で `UNREAD` ラベルを外せる。どの handler で呼ぶかは未定（handler 側で個別に呼ぶ）。
 - Gmail watch は Google 側で約 7 日で失効する。再登録は `cogs/service/gmail.py` の `setup_gmail_watch`（`tasks.loop(hours=24)`）が担当。
 
 ## 動作確認（`test_message.py`）
