@@ -113,21 +113,22 @@ class CreditCardHandler(BaseHandler):
         }
 
     def _paser_jcbcard(self, subject, text):
-        is_confirmed = subject == "（売上到着分）JCBカード/ショッピングご利用のお知らせ"
-        if subject not in {
-            "JCBカード／ショッピングご利用のお知らせ",
-            "（売上到着分）JCBカード/ショッピングご利用のお知らせ",
-        }:
+        kinds = {
+            "JCBカード／ショッピングご利用のお知らせ": "利用",
+            "（売上到着分）JCBカード/ショッピングご利用のお知らせ": "利用確定",
+            "JCBカード／ショッピング取消のお知らせ": "取消",
+        }
+        if subject not in kinds:
             return None
 
         return {
             "issuer": self._match(text, r"カード名称\s*：\s*(.+)", "JCBカード"),
-            "kind": "利用確定" if is_confirmed else "利用",
+            "kind": kinds[subject],
             "merchant": self._match(text, r"【ご利用先】\s*(.+)"),
-            "amount": self._match(text, r"【ご利用金額】\s*([\d,]+円)", "0円"),
+            "amount": self._match(text, r"【(?:ご利用金額|金額)】[\s-]*([\d,]+円)", "0円"),
             "date": self._match(
                 text,
-                r"【(?:ご利用日時\(日本時間\)|ご利用日)】\s*(.+)",
+                r"【(?:ご利用日時\(日本時間\)|ご利用日|日時（日本時間）)】\s*(.+)",
             ),
         }
 
@@ -160,8 +161,11 @@ class CreditCardHandler(BaseHandler):
         notification["issuer"] = ISSUER_ALIASES.get(
             notification["issuer"],notification["issuer"]
         )
-        is_refund = notification["kind"] == "返金"
-        action = "返金がありました" if is_refund else "利用しました"
+        is_refund = notification["kind"] in ("返金", "取消")
+        action = {
+            "返金": "返金がありました",
+            "取消": "取消がありました",
+        }.get(notification["kind"], "利用しました")
         timestamp = self._parse_timestamp(notification["date"])
         embed = Embed(
             title=f"カード{notification['kind']}通知",
