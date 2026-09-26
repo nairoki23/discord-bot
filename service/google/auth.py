@@ -77,7 +77,8 @@ class GoogleAuth:
         auth_url, _ = self.flow.authorization_url(
             access_type="offline",
             prompt="consent",
-            include_granted_scopes="true",
+            # include_granted_scopes を付けると過去に許可したスコープ（旧 gmail.readonly など）が
+            # トークンに混ざり、oauthlib が "Scope has changed" で fetch_token を失敗させる
         )
         return auth_url
 
