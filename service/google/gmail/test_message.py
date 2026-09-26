@@ -24,7 +24,9 @@ def register_handlers(service):
     """本番起動時と同じメール送信元の handler を登録する。"""
     service.set_handler(handlers.my.MyHandler(send))
     for address in handlers.credit_card.CreditCardHandler.ADDRESSES:
-        service.set_handler(handlers.credit_card.CreditCardHandler(send, address))
+        service.set_handler(
+            handlers.credit_card.CreditCardHandler(send, address, service.mark_as_read)
+        )
 
     config = dotenv_values(".env")
     for address in config.get("GMAIL_TRACK_ADDRESSES", "").split(","):

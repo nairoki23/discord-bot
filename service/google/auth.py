@@ -9,9 +9,10 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 
 config = dotenv_values(".env")
 
-GMAIL_READONLY_SCOPE = "https://www.googleapis.com/auth/gmail.readonly"
+# 既読付けのため modify（readonly の上位互換）。変更すると既存トークンは再認証が必要
+GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.modify"
 CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar"
-SCOPES = [GMAIL_READONLY_SCOPE, CALENDAR_SCOPE]
+SCOPES = [GMAIL_SCOPE, CALENDAR_SCOPE]
 
 OAUTH_CLIENT_PATH = Path(config.get("GOOGLE_OAUTH_CLIENT_PATH") or "./.gcp_keys/OAuthClient.json")
 USER_TOKEN_PATH = Path(config.get("GOOGLE_USER_TOKEN_PATH") or "./.gcp_keys/token.json")
