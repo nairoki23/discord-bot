@@ -141,6 +141,36 @@ class CreditCardHandlerTests(unittest.IsolatedAsyncioTestCase):
             ],
         )
 
+    async def test_jcb_cancellation_uses_the_common_notification_layout(self):
+        sent = []
+
+        async def sender(**kwargs):
+            sent.append(kwargs)
+
+        handler = CreditCardHandler(sender, JCB_ADDRESS)
+        await handler.handle({
+            "subject": "JCBカード／ショッピング取消のお知らせ",
+            "payload": encoded_payload(
+                "カード名称　：　ＪＡＬカードｎａｖｉ\r\n"
+                "【日時（日本時間）】　2026/09/18 12:09\r\n"
+                "【金額】- 15,045円（取消）\r\n"
+                "【ご利用先】　ラクテンチケツト\r\n"
+            ),
+        })
+
+        embed = sent[0]["embed"]
+        self.assertEqual(embed.title, "カード取消通知")
+        self.assertEqual(embed.timestamp.strftime("%Y/%m/%d %H:%M"), "2026/09/18 12:09")
+        self.assertEqual(sent[0]["content"], "ラクテンチケツトで15,045円 取消がありました")
+        self.assertEqual(
+            [(field.name, field.value) for field in embed.fields],
+            [
+                ("カード", "JALカードnavi"),
+                ("金額", "15,045円"),
+                ("利用先", "ラクテンチケツト"),
+            ],
+        )
+
     async def test_unrelated_subject_does_not_send_a_notification(self):
         sent = []
 
