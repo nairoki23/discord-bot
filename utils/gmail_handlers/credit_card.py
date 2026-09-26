@@ -43,11 +43,13 @@ class CreditCardHandler(BaseHandler):
 
     ADDRESSES = (CHIBABANK_ADDRESS, VIEWCARD_ADDRESS, JCB_ADDRESS)
 
-    def __init__(self, sender, address):
+    def __init__(self, sender, address, mark_as_read=None):
         super().__init__(sender)
         if address not in self.ADDRESSES:
             raise ValueError(f"未対応のカード通知送信元です: {address}")
         self.address = address
+        # 通知を送れたメールを既読にする関数（msg_id を受け取る）。None なら既読にしない
+        self.mark_as_read = mark_as_read
 
     @staticmethod
     def _extract_body(payload):
@@ -90,6 +92,7 @@ class CreditCardHandler(BaseHandler):
                 text, r"ご返金受付日：\s*([\d/]+)" if is_refund else r"お取引日：\s*([\d/]+)"
             ),
             "authorization": self._match(text, r"承認番号：\s*(\d+)", ""),
+            "color": Color(0xC0C4C8),  # 無彩色に近いシルバー
         }
 
     def _parse_viewcard(self, subject, text):
@@ -110,9 +113,10 @@ class CreditCardHandler(BaseHandler):
             ),
             "user": self._match(text, r"・ 利用者\s*：\s*(.+)", ""),
             "type": self._match(text, r"・ 利用種別\s*：\s*(.+)", ""),
+            "color": Color(0x59B224),  # ビックカメラSuicaカード
         }
 
-    def _paser_jcbcard(self, subject, text):
+    def _parse_jcbcard(self, subject, text):
         kinds = {
             "JCBカード／ショッピングご利用のお知らせ": "利用",
             "（売上到着分）JCBカード/ショッピングご利用のお知らせ": "利用確定",
@@ -121,8 +125,9 @@ class CreditCardHandler(BaseHandler):
         if subject not in kinds:
             return None
 
+        issuer = self._match(text, r"カード名称\s*：\s*(.+)", "JCBカード")
         return {
-            "issuer": self._match(text, r"カード名称\s*：\s*(.+)", "JCBカード"),
+            "issuer": issuer,
             "kind": kinds[subject],
             "merchant": self._match(text, r"【ご利用先】\s*(.+)"),
             "amount": self._match(text, r"【(?:ご利用金額|金額)】[\s-]*([\d,]+円)", "0円"),
@@ -130,6 +135,8 @@ class CreditCardHandler(BaseHandler):
                 text,
                 r"【(?:ご利用日時\(日本時間\)|ご利用日|日時（日本時間）)】\s*(.+)",
             ),
+            # JAL カード navi は明るい紺色、それ以外（JCB CARD W）はシルバー寄りの紺色
+            "color": Color(0x2F5BB7) if "ＪＡＬ" in issuer or "JAL" in issuer else Color(0x5B6B8C),
         }
 
     def _parse(self, subject, text):
@@ -137,7 +144,7 @@ class CreditCardHandler(BaseHandler):
             return self._parse_chibabank(subject, text)
         if self.address == VIEWCARD_ADDRESS:
             return self._parse_viewcard(subject, text)
-        return self._paser_jcbcard(subject, text)
+        return self._parse_jcbcard(subject, text)
 
     @staticmethod
     def _parse_timestamp(value):
@@ -161,7 +168,6 @@ class CreditCardHandler(BaseHandler):
         notification["issuer"] = ISSUER_ALIASES.get(
             notification["issuer"],notification["issuer"]
         )
-        is_refund = notification["kind"] in ("返金", "取消")
         action = {
             "返金": "返金がありました",
             "取消": "取消がありました",
@@ -170,7 +176,7 @@ class CreditCardHandler(BaseHandler):
         embed = Embed(
             title=f"カード{notification['kind']}通知",
             description=f"{notification['merchant']}で{notification['amount']} {action}",
-            color=Color.green() if is_refund else Color.blue(),
+            color=notification["color"],
             timestamp=timestamp,
         )
         embed.add_field(name="カード", value=notification["issuer"], inline=True)
@@ -185,3 +191,5 @@ class CreditCardHandler(BaseHandler):
         embed.set_footer(text=notification["issuer"])
 
         await self.sender(content=embed.description, embed=embed)
+        if self.mark_as_read is not None and details.get("id"):
+            self.mark_as_read(details["id"])

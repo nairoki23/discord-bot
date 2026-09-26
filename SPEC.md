@@ -92,7 +92,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 ## 4. テスト
 
 - `tests/test_google_calendar.py`: Calendar サービス（週範囲、イベント解析、作成、バリデーション、コンテナの共有）と `parse_local_datetime` / `format_events`。Google API は Fake で差し替え。
-- `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、対象外件名の無視。
+- `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、カードごとの色、通知後の既読付け、対象外件名の無視。
 - 実行: リポジトリ直下で `python -m unittest`（`.env` の `USER` などが読める状態で、Python 3.10+ と依存パッケージが必要）。
   - 現在の `venv/` は Python 3.9 で依存も未インストールのため、そのままでは失敗する。
 
