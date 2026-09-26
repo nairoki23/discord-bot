@@ -29,6 +29,16 @@ class GmailProcess:
     def set_history_id(self, history_id):
         self.history_ids.append(history_id)
 
+    def mark_as_read(self, msg_id):
+        try:
+            self.service().users().messages().modify(
+                userId="me", id=msg_id, body={"removeLabelIds": ["UNREAD"]}
+            ).execute()
+            return True
+        except Exception as exc:
+            print(f"Failed to mark Gmail message {msg_id} as read: {exc}")
+            return False
+
     def get_mail_details(self, msg_id):
         try:
             msg = self.service().users().messages().get(
