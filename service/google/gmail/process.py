@@ -26,6 +26,23 @@ class GmailProcess:
     def state_handler(self):
         return sum(1 for handler in self.handler.values() if handler.sender is not None)
 
+    def handler_addresses(self):
+        """登録済み handler の (アドレス, handlerクラス名) 一覧。"""
+        return [(address, type(handler).__name__) for address, handler in self.handler.items()]
+
+    def verify_connection(self):
+        """Gmail APIへ実際にリクエストして疎通を確認する。
+
+        ローカルの creds が期限内でも、Google側で失効・取り消し済みだと
+        リクエストは失敗するため、それを見分けるために実際に呼び出す。
+        """
+        try:
+            self.service().users().getProfile(userId="me").execute()
+            return True
+        except Exception as exc:
+            print(f"Gmail connection check failed: {exc}")
+            return False
+
     def set_history_id(self, history_id):
         self.history_ids.append(history_id)
 
