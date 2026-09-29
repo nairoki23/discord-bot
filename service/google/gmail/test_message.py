@@ -26,6 +26,7 @@ def register_handlers(service):
     service.set_handler(handlers.paypay_insurance.PayPayInsuranceHandler(send))
     service.set_handler(handlers.rakuten_ticket.RakutenTicketHandler(send))
     service.set_handler(handlers.eplus.EplusHandler(send))
+    service.set_handler(handlers.paypay_fleamarket.PayPayFleamarketHandler(send))
     for address in handlers.credit_card.CreditCardHandler.ADDRESSES:
         service.set_handler(handlers.credit_card.CreditCardHandler(send, address))
 
