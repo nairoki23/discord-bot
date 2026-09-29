@@ -1,6 +1,6 @@
 # discord-bot 仕様書
 
-個人用 Discord Bot。学校の授業予定、Google Calendar、Gmail 通知（カード利用通知など）、宅配便追跡、Y!mobile のデータ残量確認、タイマーなど、身の回りの情報を Discord に集約する。
+個人用 Discord Bot。学校の授業予定、Google Calendar、Gmail 通知（カード利用通知、PayPayほけんなど）、宅配便追跡、Y!mobile のデータ残量確認、タイマーなど、身の回りの情報を Discord に集約する。
 
 > この文書は 2026-09-26 時点のコード（`main` / `96acb65`）から読み取った現状の仕様。
 > 「こうあるべき」ではなく「今こう動いている」を書いている。意図と違う箇所は [既知の問題・要確認](#既知の問題要確認) を参照。
@@ -93,6 +93,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 
 - `tests/test_google_calendar.py`: Calendar サービス（週範囲、イベント解析、作成、バリデーション、コンテナの共有）と `parse_local_datetime` / `format_events`。Google API は Fake で差し替え。
 - `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、対象外件名の無視。
+- `tests/test_paypay_insurance_handler.py`: PayPayほけんの加入完了・終了予定通知の解析結果と Embed、未対応件名のテキスト送信。
 - 実行: リポジトリ直下で `python -m unittest`（`.env` の `USER` などが読める状態で、Python 3.10+ と依存パッケージが必要）。
   - 現在の `venv/` は Python 3.9 で依存も未インストールのため、そのままでは失敗する。
 

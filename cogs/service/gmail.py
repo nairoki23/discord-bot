@@ -11,7 +11,7 @@ TARGET_CHANNNEL_ID = int(config.get("NOTIFICATION_CHANNEL_ID"))
 CREDIT_CARD_THREAD_ID = int(config.get("CREDIT_CARD_THREAD_ID", "0") or 0)
 ENV_TRACK_ADDRESSES = [a.strip() for a in config.get("GMAIL_TRACK_ADDRESSES", "").split(",") if a.strip()]
 
-HANDLERS = (handlers.my.MyHandler,)
+HANDLERS = (handlers.my.MyHandler, handlers.paypay_insurance.PayPayInsuranceHandler)
 
 class GmailCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
