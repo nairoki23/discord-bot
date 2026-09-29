@@ -71,7 +71,6 @@ async def fetch_yamato(num):
                 elif s.find(class_="item").get_text().replace("：","")=="お届け予定日時":
                     t = s.find(class_="data").get_text()
                     if t != "-":
-                        t="03/22"
                         t = t.replace('　', ' ').strip()
                         today = date.today()
                         # 日付取得
