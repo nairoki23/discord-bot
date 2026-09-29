@@ -66,7 +66,9 @@ class GmailCog(commands.Cog):
             )
             for address in handlers.credit_card.CreditCardHandler.ADDRESSES:
                 self.service.set_handler(
-                    handlers.credit_card.CreditCardHandler(credit_card_sender, address)
+                    handlers.credit_card.CreditCardHandler(
+                        credit_card_sender, address, self.service.mark_as_read
+                    )
                 )
             self.service.setup_gmail_watch()
             self.service.start_listening()

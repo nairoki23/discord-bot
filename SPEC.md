@@ -92,7 +92,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 ## 4. テスト
 
 - `tests/test_google_calendar.py`: Calendar サービス（週範囲、イベント解析、作成、バリデーション、コンテナの共有）と `parse_local_datetime` / `format_events`。Google API は Fake で差し替え。
-- `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、対象外件名の無視。
+- `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、カードごとの色、通知後の既読付け、対象外件名の無視。
 - `tests/test_paypay_insurance_handler.py`: PayPayほけんの加入完了・終了予定通知の解析結果と Embed、未対応件名のテキスト送信。
 - `tests/test_rakuten_ticket_handler.py`: 楽天チケットの抽選申込・抽選結果（落選／当選）の解析結果と Embed、個人情報を載せないこと、未対応件名のテキスト送信。
 - `tests/test_eplus_handler.py`: イープラスの申込完了・当選・落選の解析結果（全角の正規化、希望ごとの結果、料金内訳の除外）と Embed、未対応件名のテキスト送信。

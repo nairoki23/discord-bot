@@ -28,7 +28,9 @@ def register_handlers(service):
     service.set_handler(handlers.eplus.EplusHandler(send))
     service.set_handler(handlers.paypay_fleamarket.PayPayFleamarketHandler(send))
     for address in handlers.credit_card.CreditCardHandler.ADDRESSES:
-        service.set_handler(handlers.credit_card.CreditCardHandler(send, address))
+        service.set_handler(
+            handlers.credit_card.CreditCardHandler(send, address, service.mark_as_read)
+        )
 
     config = dotenv_values(".env")
     for address in config.get("GMAIL_TRACK_ADDRESSES", "").split(","):
