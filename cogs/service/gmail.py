@@ -15,6 +15,7 @@ HANDLERS = (
     handlers.my.MyHandler,
     handlers.paypay_insurance.PayPayInsuranceHandler,
     handlers.rakuten_ticket.RakutenTicketHandler,
+    handlers.eplus.EplusHandler,
 )
 
 class GmailCog(commands.Cog):
