@@ -24,6 +24,7 @@ def register_handlers(service):
     """本番起動時と同じメール送信元の handler を登録する。"""
     service.set_handler(handlers.my.MyHandler(send))
     service.set_handler(handlers.paypay_insurance.PayPayInsuranceHandler(send))
+    service.set_handler(handlers.rakuten_ticket.RakutenTicketHandler(send))
     for address in handlers.credit_card.CreditCardHandler.ADDRESSES:
         service.set_handler(handlers.credit_card.CreditCardHandler(send, address))
 
