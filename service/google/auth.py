@@ -73,10 +73,11 @@ class GoogleAuth:
             SCOPES,
             redirect_uri=REDIRECT_URI,
         )
+        # include_granted_scopes は付けない。付けると過去に許可したスコープ
+        # (旧 gmail.readonly など) も返り、oauthlib が Scope has changed で失敗する。
         auth_url, _ = self.flow.authorization_url(
             access_type="offline",
             prompt="consent",
-            include_granted_scopes="true",
         )
         return auth_url
 
