@@ -86,8 +86,8 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 ### 2.3 権限チェック
 
 `utils/check_user.interaction_user(interaction)` が `USER` に含まれるユーザーかを判定し、含まれなければ「実行権限がありません」を ephemeral で返して `False`。
-付いているコマンド: `/today` `/calendar_week` `/calendar_add` `/usage` `/google_auth` `/gmail_*` 全部。
-**付いていない**コマンド: `/ping` `/boot-time` `/class` 系 `/timer` 系 `/tracking` 系 `/spending`。
+付いているコマンド: `/today` `/calendar_week` `/calendar_add` `/usage` `/google_auth` `/gmail_*` 全部、`/status`。
+**付いていない**コマンド: `/ping` `/class` 系 `/timer` 系 `/tracking` 系 `/spending`。
 
 ## 4. テスト
 
