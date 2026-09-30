@@ -58,14 +58,19 @@ utils/                  共通ユーティリティ
   debug.py              Webhook へのデバッグ送信
   gmail_handlers/       Gmail 受信メールの処理ハンドラ群
 tests/                  unittest
+private/                非公開モジュール（private リポジトリの git submodule。未取得なら空）
+  cogs/                 main.py が自動ロード（private.cogs.xxx）
+  func/                 非公開のドメインロジック
 ```
+
+`private/` の取り扱い（依存方向、コミット手順、デプロイ）は `submodule.md` を参照。
 
 ### 2.1 起動フロー（`main.py`）
 
 1. `.env` を読み込む。
 2. `MyBot`（`commands.Bot`, prefix `!`, `Intents.all()`）を生成。
 3. `main()` で `set_loop(bot.loop)` を呼び、サービスコンテナにイベントループを渡す（これ以前に `get_timer()` 等を呼ぶと `RuntimeError`）。
-4. `setup_hook` で `cogs/` 以下の `*.py` を再帰的に探索して `load_extension`。
+4. `setup_hook` で `cogs/` と `private/cogs/` 以下の `*.py` を再帰的に探索して `load_extension`（`private/cogs/` が無い・空なら何もしない）。
    - `_` で始まるファイルはスキップ。ただし `_google_auth.py` だけは例外的にロードする。
    - ロード失敗は `print` するだけで起動は継続。
 5. `tree.copy_global_to(TEST_GUILD)` の後、`tree.sync()`（グローバル同期）を実行。ギルド同期はコメントアウト。
@@ -93,6 +98,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 
 - `tests/test_google_calendar.py`: Calendar サービス（週範囲、イベント解析、作成、バリデーション、コンテナの共有）と `parse_local_datetime` / `format_events`。Google API は Fake で差し替え。
 - `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、対象外件名の無視。
+- private のテストは `private/tests/` に置き、`python -m unittest discover -s private/tests -t .` で実行。
 - 実行: リポジトリ直下で `python -m unittest`（`.env` の `USER` などが読める状態で、Python 3.10+ と依存パッケージが必要）。
   - 現在の `venv/` は Python 3.9 で依存も未インストールのため、そのままでは失敗する。
 
