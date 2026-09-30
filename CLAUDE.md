@@ -41,7 +41,7 @@ utils/    共通ユーティリティ（権限チェック、デバッグ送信�
 
 ## Cog を追加するとき
 
-- `cogs/`（と `private/cogs/`）以下の `*.py` は `main.py` が自動ロードする。`_` 始まりはスキップ（`_google_auth.py` のみ例外）。
+- `cogs/` 以下の `*.py` は `main.py` が自動ロードする。`_` 始まりはスキップ。
 - 形式は `cogs/ping.py` に倣う: `commands.Cog` サブクラス + `discord.app_commands.command` + `async def setup(bot)`。
 - 個人情報や外部アカウントに触るコマンドは、先頭で `utils.check_user.interaction_user(interaction)` を呼び、`False` なら return する。
 - コマンドの `description` やユーザー向けメッセージは日本語。
