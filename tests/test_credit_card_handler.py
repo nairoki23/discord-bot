@@ -141,6 +141,80 @@ class CreditCardHandlerTests(unittest.IsolatedAsyncioTestCase):
             ],
         )
 
+    async def test_jcb_cancellation_uses_the_common_notification_layout(self):
+        sent = []
+
+        async def sender(**kwargs):
+            sent.append(kwargs)
+
+        handler = CreditCardHandler(sender, JCB_ADDRESS)
+        await handler.handle({
+            "subject": "JCBカード／ショッピング取消のお知らせ",
+            "payload": encoded_payload(
+                "カード名称　：　ＪＡＬカードｎａｖｉ\r\n"
+                "【日時（日本時間）】　2026/09/18 12:09\r\n"
+                "【金額】- 15,045円（取消）\r\n"
+                "【ご利用先】　ラクテンチケツト\r\n"
+            ),
+        })
+
+        embed = sent[0]["embed"]
+        self.assertEqual(embed.title, "カード取消通知")
+        self.assertEqual(embed.timestamp.strftime("%Y/%m/%d %H:%M"), "2026/09/18 12:09")
+        self.assertEqual(sent[0]["content"], "ラクテンチケツトで15,045円 取消がありました")
+        self.assertEqual(
+            [(field.name, field.value) for field in embed.fields],
+            [
+                ("カード", "JALカードnavi"),
+                ("金額", "15,045円"),
+                ("利用先", "ラクテンチケツト"),
+            ],
+        )
+
+    async def test_notified_message_is_marked_as_read(self):
+        marked = []
+
+        async def sender(**kwargs):
+            pass
+
+        handler = CreditCardHandler(sender, CHIBABANK_ADDRESS, marked.append)
+        await handler.handle({
+            "id": "msg-1",
+            "subject": "【TSUBASAちばぎんVisaデビットカード】ご利用のお知らせ",
+            "payload": encoded_payload("お取引金額： 100 JPY"),
+        })
+
+        self.assertEqual(marked, ["msg-1"])
+
+    async def test_ignored_message_is_not_marked_as_read(self):
+        marked = []
+
+        async def sender(**kwargs):
+            pass
+
+        handler = CreditCardHandler(sender, CHIBABANK_ADDRESS, marked.append)
+        await handler.handle({
+            "id": "msg-1",
+            "subject": "お知らせ",
+            "payload": encoded_payload("本文"),
+        })
+
+        self.assertEqual(marked, [])
+
+    def test_card_color_depends_on_the_card(self):
+        cases = {
+            (CHIBABANK_ADDRESS, "【TSUBASAちばぎんVisaデビットカード】ご利用のお知らせ", ""): 0xC0C4C8,
+            (VIEWCARD_ADDRESS, "◆速報版◆ビューカードご利用情報のお知らせ（本人会員利用）", ""): 0x59B224,
+            (JCB_ADDRESS, "JCBカード／ショッピングご利用のお知らせ",
+             "カード名称　：　ＪＡＬカードｎａｖｉ"): 0x2F5BB7,
+            (JCB_ADDRESS, "JCBカード／ショッピングご利用のお知らせ",
+             "カード名称　：　ＪＣＢ　ＣＡＲＤ　Ｗ"): 0x5B6B8C,
+        }
+        for (address, subject, text), value in cases.items():
+            with self.subTest(address=address, text=text):
+                handler = CreditCardHandler(None, address)
+                self.assertEqual(handler._parse(subject, text)["color"].value, value)
+
     async def test_unrelated_subject_does_not_send_a_notification(self):
         sent = []
 

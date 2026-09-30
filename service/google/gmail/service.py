@@ -32,6 +32,15 @@ class GmailService:
     def state_handler(self):
         return self.process.state_handler()
 
+    def handler_addresses(self):
+        return self.process.handler_addresses()
+
+    def verify_connection(self):
+        return self.process.verify_connection()
+
+    def mark_as_read(self, msg_id):
+        return self.process.mark_as_read(msg_id)
+
     def setup_gmail_watch(self):
         project_id = config.get("GCP_PROJECT_ID")
         topic_id = config.get("GCP_TOPIC_ID")
