@@ -1,3 +1,5 @@
+import asyncio
+
 from discord.ext import commands, tasks
 from discord import app_commands
 import discord
@@ -11,7 +13,13 @@ TARGET_CHANNNEL_ID = int(config.get("NOTIFICATION_CHANNEL_ID"))
 CREDIT_CARD_THREAD_ID = int(config.get("CREDIT_CARD_THREAD_ID", "0") or 0)
 ENV_TRACK_ADDRESSES = [a.strip() for a in config.get("GMAIL_TRACK_ADDRESSES", "").split(",") if a.strip()]
 
-HANDLERS = (handlers.my.MyHandler,)
+HANDLERS = (
+    handlers.my.MyHandler,
+    handlers.paypay_insurance.PayPayInsuranceHandler,
+    handlers.rakuten_ticket.RakutenTicketHandler,
+    handlers.eplus.EplusHandler,
+    handlers.paypay_fleamarket.PayPayFleamarketHandler,
+)
 
 class GmailCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -80,27 +88,39 @@ class GmailCog(commands.Cog):
         if self.auth.get_creds() is not None:
             self.service.setup_gmail_watch()
     
-    @app_commands.command(name="gmail_state", description="Gmailのserviceの状況を確認します")
+    @app_commands.command(name="gmail_state", description="Google連携の認証状況とHandler登録状況を確認します")
     async def gmail_state(self, interaction: discord.Interaction):
         if not await interaction_user(interaction):
             return
-        creds=self.auth.get_creds()
+        await interaction.response.defer()
+
+        creds = self.auth.get_creds()
         if creds is None:
-            text="Gmailは認証されていません。"
+            auth_text = "未認証です。`/google_auth` を実行してください。"
+        elif self.service is None:
+            auth_text = "認証情報はありますが、Gmailサービスが起動していません。`/gmail_start` を実行してください。"
         else:
-            text="Gmailは認証されています。"
-        embeds=[
-                discord.Embed(title="認証状況", description=text),
-                ]
+            # ローカルのcredsが有効でも、Google側で失効している場合があるため実際にAPIへ接続して確認する
+            connected = await asyncio.to_thread(self.service.verify_connection)
+            auth_text = (
+                "認証済み（Gmail APIへの接続を確認しました）"
+                if connected
+                else "トークンはありますが、Gmail APIへの接続に失敗しました。再認証が必要な可能性があります。"
+            )
+        embeds = [discord.Embed(title="認証状況", description=auth_text)]
+
         if self.service is not None:
-            embeds.append(discord.Embed(title="Handler数",description=str(self.service.state_handler())))
-        # 動的追跡中のアドレス一覧を表示
-        if self.tracked_addresses:
-            addr_list = "\n".join(f"・ {addr}" for addr in self.tracked_addresses)
-            embeds.append(discord.Embed(title="追跡中メールアドレス", description=addr_list, color=discord.Color.blue()))
-        else:
-            embeds.append(discord.Embed(title="追跡中メールアドレス", description="なし", color=discord.Color.light_grey()))
-        await interaction.response.send_message(
+            addresses = self.service.handler_addresses()
+            if addresses:
+                lines = "\n".join(
+                    f"・ {address or '(アドレス未指定・素通し用)'} — {handler_type}"
+                    for address, handler_type in addresses
+                )
+                embeds.append(discord.Embed(title=f"登録Handler（{len(addresses)}件）", description=lines, color=discord.Color.blue()))
+            else:
+                embeds.append(discord.Embed(title="登録Handler", description="なし", color=discord.Color.light_grey()))
+
+        await interaction.followup.send(
             content="Gmailサービスの状態",
             embeds=embeds
             )
