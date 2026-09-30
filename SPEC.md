@@ -44,7 +44,7 @@
 ```
 main.py                 Bot 本体。cogs/ 以下を自動ロードし、スラッシュコマンドを同期
 cogs/                   Discord との接点（コマンド・イベントリスナー）。1 ファイル = 1 Cog。funcやserviceに依存
-  service/              Google 系の Cog（_google_auth.py, gmail.py）
+  service/              Google 系の Cog（google_auth.py, gmail.py）
 func/                   機能ごとのドメインロジック。Discordに依存しない、serviceに依存する（スクレイピング、予定計算など）
   class_schedule/       授業日程 JSON とその計算
   tracking/             宅配追跡（fetch/ = 業者別スクレイパ, model/ = データ型）
@@ -66,7 +66,7 @@ tests/                  unittest
 2. `MyBot`（`commands.Bot`, prefix `!`, `Intents.all()`）を生成。
 3. `main()` で `set_loop(bot.loop)` を呼び、サービスコンテナにイベントループを渡す（これ以前に `get_timer()` 等を呼ぶと `RuntimeError`）。
 4. `setup_hook` で `cogs/` 以下の `*.py` を再帰的に探索して `load_extension`。
-   - `_` で始まるファイルはスキップ。ただし `_google_auth.py` だけは例外的にロードする。
+   - `_` で始まるファイルはスキップ。
    - ロード失敗は `print` するだけで起動は継続。
 5. `tree.copy_global_to(TEST_GUILD)` の後、`tree.sync()`（グローバル同期）を実行。ギルド同期はコメントアウト。
 

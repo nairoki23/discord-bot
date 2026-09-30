@@ -7,7 +7,7 @@ Google 系サービス。OAuth 認証（`auth.py`）、Calendar（`calendar.py`�
 - Calendar と Gmail で **1 つの `GoogleAuth` を共有**する（`service.container.get_google_auth()`）。一度の OAuth で両方使える。
 - スコープ: `gmail.modify`（カード通知の既読付けに使用）と `calendar`。スコープを追加・変更すると既存トークンは `has_scopes` で弾かれ、再認証（`/google_auth`）が必要になる。
 - `get_creds()` は有効な認証情報か `None` を返す（期限切れなら refresh して保存）。例外は投げない。
-- 認証フロー: `create_cred_url()` で URL を発行 → ユーザーが Google で認証 → リダイレクト先の URL を Discord のモーダルに貼る → `interactive_creds(url)`。UI は `cogs/service/_google_auth.py`。
+- 認証フロー: `create_cred_url()` で URL を発行 → ユーザーが Google で認証 → リダイレクト先の URL を Discord のモーダルに貼る → `interactive_creds(url)`。UI は `cogs/service/google_auth.py`。
 - トークンは `.gcp_keys/token.json` にパーミッション 600 で保存。中身を読んだり出力したりしない。
 - 各サービスには `GoogleAuth` 自体ではなく `get_creds` 関数を渡す（毎回最新の認証情報を取るため）。
 
