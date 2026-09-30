@@ -1,0 +1,4 @@
+[submodule "private"]
+	path = private
+	url = git@github.com:nairoki23/discord-bot-private.git
+	branch = main

@@ -7,7 +7,7 @@
 
 - Python 3.10 以上（`X | None` 構文を使用）。依存は `requirements.txt`。
 - 起動: リポジトリ直下で `python main.py`（`.env` と `.gcp_keys/` を相対パスで読むため、カレントディレクトリ必須）。
-- テスト: リポジトリ直下で `python -m unittest`。
+- テスト: リポジトリ直下で `python -m unittest`。private 側は `python -m unittest discover -s private/tests -t .`。
   - 既存の `venv/` は Python 3.9 かつ依存未インストールなので、そのままでは動かない。
   - Google API は Fake に差し替えてテストする（`tests/test_google_calendar.py` 参照）。実 API を叩くテストは書かない。
 - 本番は systemd サービス `discordbot`（`manage.md`）。本番操作はしない。
@@ -32,9 +32,16 @@ utils/    共通ユーティリティ（権限チェック、デバッグ送信�
 - Calendar と Gmail は同じ `GoogleAuth` を共有する。
 - 各サービスの詳細: `service/timer/CLAUDE.md`、`service/google/CLAUDE.md`（認証・Calendar）、`service/google/gmail/CLAUDE.md`
 
+## 非公開モジュール（`private/` submodule）
+
+- 非公開にしたい Cog / ロジックは `private/`（private リポジトリの git submodule）に置く。`private/cogs/` は `main.py` が自動ロードする。取り扱い手順は `submodule.md`。
+- 依存は private → public の一方向のみ。public 側から `private` を import しない。
+- 非公開機能の名前や仕様を public 側（SPEC.md・CLAUDE.md・`.env.example`・コミットメッセージ・PR）に書かない。private 側のルールは `private/CLAUDE.md`。
+- private を変更したら、private 側でコミットしてから public 側で `git add private` してポインタを更新する。github.com へは接続できないので、push や `submodule update --init` はユーザーに頼む。
+
 ## Cog を追加するとき
 
-- `cogs/` 以下の `*.py` は `main.py` が自動ロードする。`_` 始まりはスキップ（`_google_auth.py` のみ例外）。
+- `cogs/`（と `private/cogs/`）以下の `*.py` は `main.py` が自動ロードする。`_` 始まりはスキップ（`_google_auth.py` のみ例外）。
 - 形式は `cogs/ping.py` に倣う: `commands.Cog` サブクラス + `discord.app_commands.command` + `async def setup(bot)`。
 - 個人情報や外部アカウントに触るコマンドは、先頭で `utils.check_user.interaction_user(interaction)` を呼び、`False` なら return する。
 - コマンドの `description` やユーザー向けメッセージは日本語。
