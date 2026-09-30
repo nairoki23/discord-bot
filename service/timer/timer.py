@@ -83,11 +83,8 @@ class TimerService:
         }
 
     def _on_done(self, job_id: str):
-        # 完全に消すならここ
-        del self.jobs[job_id]
-
-        # 履歴残すなら何もしない
-        pass
+        # cancel() と done callback の両方から呼ばれるので、削除済みでも落ちないようにする
+        self.jobs.pop(job_id, None)
 
     def _apply_jitter(self, when: datetime, jitter: float | None):
         if not jitter:
