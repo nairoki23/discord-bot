@@ -25,6 +25,10 @@ class FetchError(Exception):
     pass
 
 
+class NotOwnerError(Exception):
+    pass
+
+
 def is_updated(old:Pack|None,new:Pack)->bool:
     if old is None:
         return True
@@ -43,8 +47,10 @@ class Tracking:
     cb は cb(pack) の形で呼ばれる。pack は更新後の Pack、
     取得失敗が続いて追跡を打ち切るときだけ None。
     """
-    def __init__(self,tracking_num:str,brand:Brand,name:str,on_finish=None):
+    def __init__(self,tracking_num:str,brand:Brand,name:str,on_finish=None,owner_id:int|None=None):
         self.latest_pack:Pack|None=None
+        # 追跡を依頼したユーザー。停止できるのはこのユーザーだけ
+        self.owner_id:int|None=owner_id
         self.tracking_num:str=tracking_num
         self.brand:Brand=brand
         self.cb={}
@@ -166,6 +172,9 @@ class Track:
             # ヤマト
             if "no01" in query:
                 return query["no01"][0]
+            # 佐川
+            if "okurijoNo" in query:
+                return query["okurijoNo"][0]
 
             return None
 
@@ -190,7 +199,7 @@ class Track:
     async def fetch_pack(self,tracking_num:str,brand:Brand,name) -> Pack|None:
         return await Tracking(tracking_num,brand,name).fetch_pack()
 
-    async def start_track(self,tracking_num,brand,name,cb) -> tuple[str,Pack]:
+    async def start_track(self,tracking_num,brand,name,cb,owner_id:int|None=None) -> tuple[str,Pack]:
         """
         追跡を開始して (cb_id, 現在の Pack) を返す。
         既に追跡中なら AlreadyTrackingError、初回取得に失敗したら FetchError。
@@ -198,7 +207,7 @@ class Track:
         """
         if tracking_num in self.trackings[brand]:
             raise AlreadyTrackingError(tracking_num)
-        tracking=Tracking(tracking_num,brand,name,on_finish=self._remove)
+        tracking=Tracking(tracking_num,brand,name,on_finish=self._remove,owner_id=owner_id)
         cb_id=tracking.set_cb(cb)
         self.trackings[brand][tracking_num]=tracking
         try:
@@ -210,10 +219,16 @@ class Track:
             self._remove(tracking)
         return cb_id,pack
 
-    def stop_track(self,tracking_num,brand) -> bool:
+    def stop_track(self,tracking_num,brand,requester_id:int|None=None) -> bool:
+        """
+        追跡を止める。追跡していなければ False。
+        依頼者が決まっている追跡を別のユーザーが止めようとしたら NotOwnerError。
+        """
         tracking=self.trackings[brand].get(tracking_num)
         if tracking is None:
             return False
+        if tracking.owner_id is not None and tracking.owner_id!=requester_id:
+            raise NotOwnerError(tracking_num)
         tracking.cancel()
         self._remove(tracking)
         return True

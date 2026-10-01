@@ -23,7 +23,6 @@ async def fetch_jp(num):
     soup = bs(text, 'html.parser')
     pack=soup.find("div",class_="indent").find_all("table")
     kyoku={}
-    print(pack)
     try:
         for p in pack[2].find_all("tr"):
             tds=p.find_all("td")

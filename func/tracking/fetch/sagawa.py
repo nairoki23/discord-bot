@@ -2,13 +2,22 @@ import aiohttp				# HTTP通信ライブラリ
 from bs4 import BeautifulSoup as bs
 from pprint import pprint
 from datetime import datetime
-from ..utils import adjust_year
+from ..utils import nearest_datetime
 from ..model.detail import Detail
 from ..model.pack import Pack
 from ..utils import state_changer
 from ..model.state import State
 from ..model.brand import Brand
 import asyncio
+import re
+
+
+def parse_detail_time(t:str,now:datetime|None=None)->datetime:
+    """「09/29 10:00」を datetime にする。"""
+    m=re.search(r'(\d{1,2})/(\d{1,2})\s*(\d{1,2}):(\d{2})',t)
+    if not m:
+        raise ValueError(f"日時を読み取れない: {t}")
+    return nearest_datetime(*(int(g) for g in m.groups()),now=now)
 
 async def fetch_sagawa(num):
     payload = {
@@ -47,7 +56,7 @@ async def fetch_sagawa(num):
         res.details.append(
             Detail(
                 title=tds[0].get_text(strip=True),
-                time=adjust_year(datetime.strptime(f"{datetime.now().year}/{tds[1].get_text(strip=True)}", "%Y/%m/%d %H:%M")),
+                time=parse_detail_time(tds[1].get_text(strip=True)),
                 place_name=tds[2].get_text(strip=True)
             )
         )

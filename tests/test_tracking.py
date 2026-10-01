@@ -11,6 +11,7 @@ from func.tracking.track import (
     MAX_FETCH_FAILURES,
     AlreadyTrackingError,
     FetchError,
+    NotOwnerError,
     Track,
 )
 
@@ -199,6 +200,23 @@ class TrackingTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.timer.cancelled, ["job-0"])
         self.assertEqual(self.track.list_tracks(), [])
         self.assertFalse(self.track.stop_track("1234", Brand.yamato))
+
+    async def test_owner_can_stop(self):
+        self.use_fetcher(make_pack("荷物受付"))
+        await self.track.start_track("1234", Brand.yamato, "荷物", self.cb, owner_id=1)
+
+        self.assertTrue(self.track.stop_track("1234", Brand.yamato, requester_id=1))
+        self.assertEqual(self.track.list_tracks(), [])
+
+    async def test_other_user_cannot_stop(self):
+        self.use_fetcher(make_pack("荷物受付"))
+        await self.track.start_track("1234", Brand.yamato, "荷物", self.cb, owner_id=1)
+
+        with self.assertRaises(NotOwnerError):
+            self.track.stop_track("1234", Brand.yamato, requester_id=2)
+
+        self.assertEqual(self.timer.cancelled, [])
+        self.assertEqual(len(self.track.list_tracks()), 1)
 
     async def test_one_off_fetch_failure_returns_none(self):
         self.use_fetcher(RuntimeError("html changed"))
