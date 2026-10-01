@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from .model.brand import Brand
 from .fetch.yamato import fetch_yamato
 from .fetch.sagawa import fetch_sagawa
@@ -15,32 +13,84 @@ from urllib.parse import urlparse,parse_qs
 
 FETCH_DELTA=timedelta(minutes=20)
 FETCH_JITTER=timedelta(minutes=5)
+# 連続でこの回数取得に失敗したら追跡を打ち切る
+MAX_FETCH_FAILURES=3
+
+
+class AlreadyTrackingError(Exception):
+    pass
+
+
+class FetchError(Exception):
+    pass
+
+
+class NotOwnerError(Exception):
+    pass
+
+
+def is_updated(old:Pack|None,new:Pack)->bool:
+    if old is None:
+        return True
+    if new.state_title!=old.state_title:
+        return True
+    if len(new.details)!=len(old.details):
+        return True
+    if new.details and new.details[-1].title!=old.details[-1].title:
+        return True
+    return new.state_type==State.arrival
+
+
 class Tracking:
-    def __init__(self,tracking_num:str,brand:Brand,name:str):
+    """
+    荷物1件の追跡。
+    cb は cb(pack) の形で呼ばれる。pack は更新後の Pack、
+    取得失敗が続いて追跡を打ち切るときだけ None。
+    """
+    def __init__(self,tracking_num:str,brand:Brand,name:str,on_finish=None,owner_id:int|None=None):
         self.latest_pack:Pack|None=None
+        # 追跡を依頼したユーザー。停止できるのはこのユーザーだけ
+        self.owner_id:int|None=owner_id
         self.tracking_num:str=tracking_num
         self.brand:Brand=brand
         self.cb={}
         self.job_id=""
         self.name=name
+        self.fail_count=0
+        self.on_finish=on_finish
 
     async def fetch_pack(self) -> Pack|None:
-        pack=None
-        if self.brand==Brand.yamato:
-            pack= await fetch_yamato(self.tracking_num)
-        elif self.brand == Brand.sagawa:
-            pack= await fetch_sagawa(self.tracking_num)
-        elif self.brand==Brand.jp:
-            pack= await fetch_jp(self.tracking_num)
-        else:
+        fetcher={
+            Brand.yamato:fetch_yamato,
+            Brand.sagawa:fetch_sagawa,
+            Brand.jp:fetch_jp,
+        }.get(self.brand)
+        if fetcher is None:
+            return None
+        try:
+            pack=await fetcher(self.tracking_num)
+        except Exception as e:
+            print(f"[tracking] {self.brand.value} {self.tracking_num} の取得に失敗: {e!r}")
+            return None
+        if pack is None:
             return None
         pack.name=self.name
-
         return pack
-    async def set_track(self):
-        self.latest_pack=await self.fetch_pack()
-        self.job_id=get_timer().schedule(datetime.now()+FETCH_DELTA,self.timer_cb,FETCH_JITTER)
-        return self.latest_pack
+
+    async def set_track(self) -> Pack:
+        """初回取得をして、配達完了でなければ定期取得を予約する。"""
+        pack=await self.fetch_pack()
+        if pack is None:
+            raise FetchError(self.tracking_num)
+        self.latest_pack=pack
+        if pack.state_type!=State.arrival:
+            self.job_id=get_timer().schedule(datetime.now()+FETCH_DELTA,self.timer_cb,FETCH_JITTER)
+        return pack
+
+    def cancel(self):
+        if self.job_id:
+            get_timer().cancel(self.job_id)
+            self.job_id=""
 
     def set_cb(self,cb):
         cb_id=""
@@ -58,19 +108,39 @@ class Tracking:
         del self.cb[cb_id]
         return True
 
+    async def notify(self,pack:Pack|None):
+        for cb in list(self.cb.values()):
+            try:
+                result=cb(pack)
+                if asyncio.iscoroutine(result):
+                    await result
+            except Exception as e:
+                print(f"[tracking] {self.brand.value} {self.tracking_num} の通知に失敗: {e!r}")
+
+    def finish(self):
+        # timer_cb の中から呼ばれるので job の cancel はしない（None を返せば終了する）
+        self.job_id=""
+        if self.on_finish:
+            self.on_finish(self)
+
     async def timer_cb(self):
         now_pack=await self.fetch_pack()
-        pprint(now_pack)
-        if now_pack:
-            if ((self.latest_pack is None)and (now_pack is not None)) or (len(now_pack.details)!=len(self.latest_pack.details)) or ((len(now_pack.details)>=1) and(now_pack.details[-1].title!=self.latest_pack.details[-1].title)) or (now_pack.state_title!=self.latest_pack.state_title) or (now_pack.state_type)==State.arrival:
-                for cb in self.cb.values():
-                    result=cb(self.latest_pack)
-                    if asyncio.iscoroutine(result):
-                        await result
-                    continue
-            if now_pack.state_type==State.arrival:
+        if now_pack is None:
+            self.fail_count+=1
+            if self.fail_count>=MAX_FETCH_FAILURES:
+                await self.notify(None)
+                self.finish()
                 return None
+            return datetime.now()+FETCH_DELTA
+        self.fail_count=0
+
+        if is_updated(self.latest_pack,now_pack):
+            await self.notify(now_pack)
         self.latest_pack=now_pack
+
+        if now_pack.state_type==State.arrival:
+            self.finish()
+            return None
         return datetime.now()+FETCH_DELTA
 
 
@@ -102,6 +172,9 @@ class Track:
             # ヤマト
             if "no01" in query:
                 return query["no01"][0]
+            # 佐川
+            if "okurijoNo" in query:
+                return query["okurijoNo"][0]
 
             return None
 
@@ -123,20 +196,49 @@ class Track:
         return carrier,number
 
 
-    async def fetch_pack(self,tracking_num:str,brand:Brand,name):
+    async def fetch_pack(self,tracking_num:str,brand:Brand,name) -> Pack|None:
         return await Tracking(tracking_num,brand,name).fetch_pack()
 
-    async def start_track(self,tracking_num,brand,name,cb):
+    async def start_track(self,tracking_num,brand,name,cb,owner_id:int|None=None) -> tuple[str,Pack]:
+        """
+        追跡を開始して (cb_id, 現在の Pack) を返す。
+        既に追跡中なら AlreadyTrackingError、初回取得に失敗したら FetchError。
+        既に配達完了なら通知は予約せず、追跡対象にも残さない。
+        """
         if tracking_num in self.trackings[brand]:
-            return None
+            raise AlreadyTrackingError(tracking_num)
+        tracking=Tracking(tracking_num,brand,name,on_finish=self._remove,owner_id=owner_id)
+        cb_id=tracking.set_cb(cb)
+        self.trackings[brand][tracking_num]=tracking
         try:
-            self.trackings[brand][tracking_num]=Tracking(tracking_num,brand,name)
-            cb_id=self.trackings[brand][tracking_num].set_cb(cb)
-            await self.trackings[brand][tracking_num].set_track()
-            await self.trackings[brand][tracking_num].timer_cb()
-        except Exception as e:
-            print(e)
-        return cb_id
+            pack=await tracking.set_track()
+        except Exception:
+            self._remove(tracking)
+            raise
+        if pack.state_type==State.arrival:
+            self._remove(tracking)
+        return cb_id,pack
+
+    def stop_track(self,tracking_num,brand,requester_id:int|None=None) -> bool:
+        """
+        追跡を止める。追跡していなければ False。
+        依頼者が決まっている追跡を別のユーザーが止めようとしたら NotOwnerError。
+        """
+        tracking=self.trackings[brand].get(tracking_num)
+        if tracking is None:
+            return False
+        if tracking.owner_id is not None and tracking.owner_id!=requester_id:
+            raise NotOwnerError(tracking_num)
+        tracking.cancel()
+        self._remove(tracking)
+        return True
+
+    def list_tracks(self) -> list[Tracking]:
+        return [t for b in self.trackings.values() for t in b.values()]
+
+    def _remove(self,tracking:Tracking):
+        if self.trackings[tracking.brand].get(tracking.tracking_num) is tracking:
+            del self.trackings[tracking.brand][tracking.tracking_num]
 
     async def add_cb(self,tracking_num,brand,cb):
         if tracking_num not in self.trackings[brand]:
@@ -144,10 +246,10 @@ class Track:
         cb_id = self.trackings[brand][tracking_num].set_cb(cb)
         return cb_id
 
-    async def remove_cb(self,tracking_num,brand,cb):
+    async def remove_cb(self,tracking_num,brand,cb_id):
         if tracking_num not in self.trackings[brand]:
             return False
-        return self.trackings[brand][tracking_num].del_cb(cb)
+        return self.trackings[brand][tracking_num].del_cb(cb_id)
 
 
 _track=Track()
