@@ -21,10 +21,6 @@ class AlreadyTrackingError(Exception):
     pass
 
 
-class FetchError(Exception):
-    pass
-
-
 class NotOwnerError(Exception):
     pass
 
@@ -77,13 +73,14 @@ class Tracking:
         pack.name=self.name
         return pack
 
-    async def set_track(self) -> Pack:
-        """初回取得をして、配達完了でなければ定期取得を予約する。"""
+    async def set_track(self) -> Pack|None:
+        """
+        初回取得をして、配達完了でなければ定期取得を予約する。
+        伝票番号が未登録などで初回取得に失敗しても、定期取得は予約する（None を返す）。
+        """
         pack=await self.fetch_pack()
-        if pack is None:
-            raise FetchError(self.tracking_num)
         self.latest_pack=pack
-        if pack.state_type!=State.arrival:
+        if pack is None or pack.state_type!=State.arrival:
             self.job_id=get_timer().schedule(datetime.now()+FETCH_DELTA,self.timer_cb,FETCH_JITTER)
         return pack
 
@@ -199,10 +196,11 @@ class Track:
     async def fetch_pack(self,tracking_num:str,brand:Brand,name) -> Pack|None:
         return await Tracking(tracking_num,brand,name).fetch_pack()
 
-    async def start_track(self,tracking_num,brand,name,cb,owner_id:int|None=None) -> tuple[str,Pack]:
+    async def start_track(self,tracking_num,brand,name,cb,owner_id:int|None=None) -> tuple[str,Pack|None]:
         """
         追跡を開始して (cb_id, 現在の Pack) を返す。
-        既に追跡中なら AlreadyTrackingError、初回取得に失敗したら FetchError。
+        既に追跡中なら AlreadyTrackingError。
+        初回取得に失敗した場合（伝票番号が未登録など）も追跡は続け、Pack は None。
         既に配達完了なら通知は予約せず、追跡対象にも残さない。
         """
         if tracking_num in self.trackings[brand]:
@@ -215,7 +213,7 @@ class Track:
         except Exception:
             self._remove(tracking)
             raise
-        if pack.state_type==State.arrival:
+        if pack is not None and pack.state_type==State.arrival:
             self._remove(tracking)
         return cb_id,pack
 

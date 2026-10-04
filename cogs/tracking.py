@@ -2,7 +2,7 @@ import discord
 from discord import Embed
 from discord.ext import commands,tasks
 from func.tracking.model.brand import Brand
-from func.tracking.track import get_track, AlreadyTrackingError, FetchError, NotOwnerError
+from func.tracking.track import get_track, AlreadyTrackingError, NotOwnerError
 from func.tracking.model.pack import Pack
 from func.tracking.model.state import State
 from datetime import datetime
@@ -145,8 +145,12 @@ class Tracking(commands.Cog):
         except AlreadyTrackingError:
             await interaction.followup.send(content=f"{tracking_num} は既に追跡中です。")
             return
-        except FetchError:
-            await interaction.followup.send(content=FETCH_ERROR_MESSAGE)
+        if pack is None:
+            await interaction.followup.send(
+                content=f"{name}（{tracking_num}）の追跡を開始しました。\n"
+                        "現在は荷物情報を取得できませんでした（伝票番号が未登録の可能性があります）。"
+                        "取得できるまで確認を続け、状況が更新されたらお知らせします。",
+            )
             return
         if pack.state_type==State.arrival:
             await interaction.followup.send(
@@ -155,7 +159,7 @@ class Tracking(commands.Cog):
             )
             return
         await interaction.followup.send(
-            content=pack.name+"の追跡を開始しました。",
+            content=pack.name+"の追跡を開始しました。\n配達状況が更新されたらお知らせします。",
             embed=make_embed(pack),
         )
 

@@ -10,7 +10,6 @@ from func.tracking.model.state import State
 from func.tracking.track import (
     MAX_FETCH_FAILURES,
     AlreadyTrackingError,
-    FetchError,
     NotOwnerError,
     Track,
 )
@@ -142,20 +141,27 @@ class TrackingTest(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(AlreadyTrackingError):
             await self.start()
 
-    async def test_initial_fetch_failure_raises_and_is_not_kept(self):
-        self.use_fetcher(RuntimeError("html changed"), make_pack("荷物受付"))
+    async def test_initial_fetch_failure_keeps_tracking(self):
+        self.use_fetcher(RuntimeError("not registered"), make_pack("荷物受付"))
 
-        with self.assertRaises(FetchError):
+        _, pack = await self.start()
+
+        self.assertIsNone(pack)
+        self.assertEqual(len(self.track.list_tracks()), 1)
+        self.assertEqual(len(self.timer.jobs), 1)
+        with self.assertRaises(AlreadyTrackingError):
             await self.start()
 
-        self.assertEqual(self.track.list_tracks(), [])
-        await self.start()
+        self.assertIsNotNone(await self.run_job())
+        self.assertEqual([p.state_title for p in self.notified], ["荷物受付"])
 
-    async def test_fetch_returning_none_is_failure(self):
+    async def test_fetch_returning_none_keeps_tracking(self):
         self.use_fetcher(None)
 
-        with self.assertRaises(FetchError):
-            await self.start()
+        _, pack = await self.start()
+
+        self.assertIsNone(pack)
+        self.assertEqual(len(self.track.list_tracks()), 1)
 
     async def test_transient_failure_keeps_tracking(self):
         self.use_fetcher(
