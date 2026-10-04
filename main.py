@@ -14,20 +14,20 @@ class MyBot(commands.Bot):
 
     # ボット起動時に一度だけ呼ばれる準備用関数
     async def setup_hook(self):
-        base = Path("./cogs")
+        # public の cogs と、private submodule の cogs（無ければ何もロードしない）
+        for base in (Path("cogs"), Path("private/cogs")):
+            for path in base.rglob("*.py"):
+                if path.name.startswith("_"):
+                    continue
 
-        for path in base.rglob("*.py"):
-            if path.name.startswith("_"):
-                continue
+                # cogs.xxx.yyy / private.cogs.xxx 形式に変換
+                module = ".".join(path.with_suffix("").parts)
 
-            # cogs.xxx.yyy 形式に変換
-            module = ".".join(path.with_suffix("").parts)
-
-            try:
-                await self.load_extension(module)
-                print(f"Loaded: {module}")
-            except Exception as e:
-                print(f"Failed: {module} -> {e}")
+                try:
+                    await self.load_extension(module)
+                    print(f"Loaded: {module}")
+                except Exception as e:
+                    print(f"Failed: {module} -> {e}")
         # スラッシュコマンドの同期
         guild = discord.Object(id=config.get("TEST_GUILD"))
         self.tree.copy_global_to(guild=guild)
