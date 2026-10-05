@@ -22,7 +22,7 @@
 | キー | 用途 | 使用箇所 |
 |---|---|---|
 | `DISCORD_TOKEN` | Bot トークン | `main.py` |
-| `TEST_GUILD` | テスト用ギルド ID（現状は実質未使用。後述） | `main.py` |
+| `MAIN_GUILD` | メインのギルド ID。`private/cogs` のコマンドはこのギルドにのみ登録する（未設定なら登録しない。後述） | `main.py` |
 | `USER` | カンマ区切りのユーザー ID。**コマンド実行許可ユーザー** かつ **BAN 対象** の両方に使われている（要確認） | `utils/check_user.py`, `cogs/ban.py`, `cogs/data_usage.py` |
 | `PHONE_NUMBER` / `YMOBILE_PASSWORD` | Y!mobile ログイン情報 | `cogs/data_usage.py` |
 | `GMAIL_TRACK_ADDRESSES` | 起動時に自動で追跡するメールアドレス（カンマ区切り） | `cogs/service/gmail.py` |
@@ -80,10 +80,10 @@ private/                非公開モジュール（private リポジトリの gi
 1. `.env` を読み込む。
 2. `MyBot`（`commands.Bot`, prefix `!`, `Intents.all()`）を生成。
 3. `main()` で `set_loop(bot.loop)` を呼び、サービスコンテナにイベントループを渡す（これ以前に `get_timer()` 等を呼ぶと `RuntimeError`）。
-4. `setup_hook` で `cogs/` 以下の `*.py` を再帰的に探索して `load_extension`。
+4. `setup_hook` で `cogs/`、続いて `private/cogs/` 以下の `*.py` を再帰的に探索して `load_extension`。
    - `_` で始まるファイルはスキップ。
    - ロード失敗は `print` するだけで起動は継続。
-5. `tree.copy_global_to(TEST_GUILD)` の後、`tree.sync()`（グローバル同期）を実行。ギルド同期はコメントアウト。
+5. `private/cogs` のロードで増えたコマンドをグローバルから外して `MAIN_GUILD` に付け替え、`tree.sync()`（グローバル同期: public）と `tree.sync(guild=MAIN_GUILD)`（ギルド同期: private）を実行。
 
 ### 2.2 サービスコンテナ（`service/container.py`）
 
