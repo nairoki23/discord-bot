@@ -16,6 +16,7 @@
 
 - `.env` と `.gcp_keys/` は読まない・出力しない・コミットしない。
 - 新しい環境変数を追加したら `.env.example` と `SPEC.md` の環境変数表を更新する。
+- チャンネル / スレッド ID は `.env` ではなく `channels.json`（git 管理外）に置き、`utils.channels.get_channel_id()` で読む。キーを追加したら `channels.example.json` と `SPEC.md` の表を更新する。
 
 ## アーキテクチャ（レイヤーと依存方向）
 

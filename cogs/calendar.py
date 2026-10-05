@@ -12,6 +12,7 @@ from dotenv import dotenv_values
 
 from service.container import get_google_calendar_service, get_timer
 from service.google.calendar import CalendarEvent
+from utils.channels import get_channel_id
 from utils.check_user import interaction_user
 
 
@@ -164,7 +165,7 @@ class CalendarCog(commands.Cog):
         await interaction.followup.send(f"予定を追加しました: {event.summary}{link}")
 
     async def cog_load(self):
-        channel_id = config.get("NOTIFICATION_CHANNEL_ID")
+        channel_id = get_channel_id("notification_channel_id")
         if not channel_id:
             return
 
@@ -172,7 +173,7 @@ class CalendarCog(commands.Cog):
             start, end = self.service.tomorrow_range()
             try:
                 events = await self._list_events(start, end) if self.service.is_available() else []
-                channel = await self.bot.fetch_channel(int(channel_id))
+                channel = await self.bot.fetch_channel(channel_id)
                 message = "## 明日の予定\n"
                 message += format_events(events) if events else "予定は登録されていません"
                 await channel.send(message)

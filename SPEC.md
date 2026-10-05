@@ -25,8 +25,6 @@
 | `TEST_GUILD` | テスト用ギルド ID（現状は実質未使用。後述） | `main.py` |
 | `USER` | カンマ区切りのユーザー ID。**コマンド実行許可ユーザー** かつ **BAN 対象** の両方に使われている（要確認） | `utils/check_user.py`, `cogs/ban.py`, `cogs/data_usage.py` |
 | `PHONE_NUMBER` / `YMOBILE_PASSWORD` | Y!mobile ログイン情報 | `cogs/data_usage.py` |
-| `NOTIFICATION_CHANNEL_ID` | 通知の送信先チャンネル（Gmail 通知、明日の予定） | `cogs/service/gmail.py`, `cogs/calendar.py` |
-| `CREDIT_CARD_THREAD_ID` | カード利用通知の送信先（未設定なら `NOTIFICATION_CHANNEL_ID`） | `cogs/service/gmail.py` |
 | `GMAIL_TRACK_ADDRESSES` | 起動時に自動で追跡するメールアドレス（カンマ区切り） | `cogs/service/gmail.py` |
 | `GCP_PROJECT_ID` / `GCP_TOPIC_ID` / `GCP_SUBSCRIPTION_ID` | Gmail watch → Pub/Sub の設定 | `service/google/gmail/service.py` |
 | `GOOGLE_SERVICE_ACCOUNT_PATH` | Pub/Sub 購読用サービスアカウント鍵（既定 `./.gcp_keys/credentials.json`。`.env.example` には未記載） | 同上 |
@@ -36,6 +34,18 @@
 | `GOOGLE_CALENDAR_ID` | `/calendar_add` の登録先（既定 `primary`） | `service/container.py` |
 | `GOOGLE_CALENDAR_TIMEZONE` | カレンダーのタイムゾーン（既定 `Asia/Tokyo`） | `cogs/calendar.py`, `service/container.py` |
 | `DEBUG_WEBHOOK` | デバッグ送信用 Webhook（Gmail handler のテストスクリプトで使用） | `utils/debug.py` |
+
+### 1.2 チャンネル / スレッド ID（`channels.json`）
+
+通知先のチャンネル ID・スレッド ID は `.env` ではなくリポジトリ直下の `channels.json` で管理する（git 管理外）。
+`channels.example.json` をコピーして作る。読み込みは `utils/channels.py` の `get_channel_id(key)`。
+値は数値・文字列どちらでもよく、`null` または未記載なら未設定扱い。ファイルが無い場合は全キー未設定として起動する。
+
+| キー | 用途 | 使用箇所 |
+|---|---|---|
+| `notification_channel_id` | 通知の送信先チャンネル（Gmail 通知、明日の予定） | `cogs/service/gmail.py`, `cogs/calendar.py` |
+| `credit_card_thread_id` | カード利用通知の送信先（未設定なら `notification_channel_id`） | `cogs/service/gmail.py` |
+| `car_channel_id` | car チャンネル（未使用・予約） | なし |
 
 ---
 

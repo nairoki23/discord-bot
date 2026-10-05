@@ -7,10 +7,11 @@ import discord
 from service.container import get_gmail_service, get_google_auth
 from utils.check_user import interaction_user
 import utils.gmail_handlers as handlers
+from utils.channels import get_channel_id
 from dotenv import dotenv_values
 config = dotenv_values(".env")
-TARGET_CHANNNEL_ID = int(config.get("NOTIFICATION_CHANNEL_ID"))
-CREDIT_CARD_THREAD_ID = int(config.get("CREDIT_CARD_THREAD_ID", "0") or 0)
+TARGET_CHANNNEL_ID = get_channel_id("notification_channel_id")
+CREDIT_CARD_THREAD_ID = get_channel_id("credit_card_thread_id")
 ENV_TRACK_ADDRESSES = [a.strip() for a in config.get("GMAIL_TRACK_ADDRESSES", "").split(",") if a.strip()]
 
 HANDLERS = (
