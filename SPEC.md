@@ -67,6 +67,8 @@ utils/                  共通ユーティリティ
   check_user.py         実行権限チェック
   debug.py              Webhook へのデバッグ送信
   gmail_handlers/       Gmail 受信メールの処理ハンドラ群
+scripts/                単体で実行する運用スクリプト（リポジトリ直下で実行）
+  clear_commands.py     登録済みスラッシュコマンドの全削除（開発終了時用）
 tests/                  unittest
 private/                非公開モジュール（private リポジトリの git submodule。未取得なら空）
   cogs/                 main.py が自動ロード（private.cogs.xxx）
@@ -84,6 +86,14 @@ private/                非公開モジュール（private リポジトリの gi
    - `_` で始まるファイルはスキップ。
    - ロード失敗は `print` するだけで起動は継続。
 5. `private/cogs` のロードで増えたコマンドをグローバルから外して `MAIN_GUILD` に付け替え、`tree.sync()`（グローバル同期: public）と `tree.sync(guild=MAIN_GUILD)`（ギルド同期: private）を実行。
+
+### 2.1.1 スラッシュコマンドの全削除（`scripts/clear_commands.py`）
+
+開発用 Bot などで登録したスラッシュコマンドを Discord から消す。Bot は起動せず、`.env` の `DISCORD_TOKEN` でログインして HTTP API だけで削除する。
+
+- `python scripts/clear_commands.py`: グローバルと参加中の全ギルドの登録済みコマンドを一覧表示し、確認してから削除。
+- `-y` / `--yes`: 確認なしで削除。
+- 削除は空のコマンド一覧を `tree.sync()` することで行う。`main.py` を起動すると再登録される。
 
 ### 2.2 サービスコンテナ（`service/container.py`）
 
@@ -108,6 +118,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 
 - `tests/test_google_calendar.py`: Calendar サービス（週範囲、イベント解析、作成、バリデーション、コンテナの共有）と `parse_local_datetime` / `format_events`。Google API は Fake で差し替え。
 - `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、対象外件名の無視。
+- `tests/test_clear_commands.py`: コマンド全削除スクリプトの対象収集（未登録の場所は除外）と、対象ごとの clear + sync。CommandTree は Fake で差し替え。
 - private のテストは `private/tests/` に置き、`python -m unittest discover -s private/tests -t .` で実行。
 - `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、カードごとの色、通知後の既読付け、対象外件名の無視。
 - `tests/test_paypay_insurance_handler.py`: PayPayほけんの加入完了・終了予定通知の解析結果と Embed、未対応件名のテキスト送信。
