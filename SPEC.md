@@ -1,6 +1,6 @@
 # discord-bot 仕様書
 
-個人用 Discord Bot。学校の授業予定、Google Calendar、Gmail 通知（カード利用通知、PayPayほけん、楽天チケット、イープラス、Yahoo!フリマなど）、宅配便追跡、Y!mobile のデータ残量確認、タイマーなど、身の回りの情報を Discord に集約する。
+個人用 Discord Bot。学校の授業予定、Google Calendar、Gmail 通知（カード利用通知、PayPayほけん、楽天チケット、イープラス、Yahoo!フリマ、Times CAR など）、宅配便追跡、Y!mobile のデータ残量確認、タイマーなど、身の回りの情報を Discord に集約する。
 
 > この文書は 2026-09-26 時点のコード（`main` / `96acb65`）から読み取った現状の仕様。
 > 「こうあるべき」ではなく「今こう動いている」を書いている。意図と違う箇所は [既知の問題・要確認](#既知の問題要確認) を参照。
@@ -45,7 +45,7 @@
 |---|---|---|
 | `notification_channel_id` | 通知の送信先チャンネル（Gmail 通知、明日の予定） | `cogs/service/gmail.py`, `cogs/calendar.py` |
 | `credit_card_thread_id` | カード利用通知の送信先（未設定なら `notification_channel_id`） | `cogs/service/gmail.py` |
-| `car_channel_id` | car チャンネル（未使用・予約） | なし |
+| `car_channel_id` | PayPayほけん・Times CAR 通知の送信先（未設定なら `notification_channel_id`） | `cogs/service/gmail.py` |
 
 ---
 
@@ -125,6 +125,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 - `tests/test_rakuten_ticket_handler.py`: 楽天チケットの抽選申込・抽選結果（落選／当選）の解析結果と Embed、個人情報を載せないこと、未対応件名のテキスト送信。
 - `tests/test_eplus_handler.py`: イープラスの申込完了・当選・落選の解析結果（全角の正規化、希望ごとの結果、料金内訳の除外）と Embed、未対応件名のテキスト送信。
 - `tests/test_paypay_fleamarket_handler.py`: Yahoo!フリマの取引メッセージ・購入・発送通知の解析結果と Embed（計測用クエリを外したリンク）、未対応件名のテキスト送信。
+- `tests/test_times_car_handler.py`: Times CAR の予約登録・変更・取消、返却確認、返却証（ペナルティは発生時のみ）、給油割引の解析結果と Embed（受信日時のタイムスタンプ）、氏名を載せないこと、通知しない件名（認証コード・アプリ解施錠登録・入会関連）、未対応件名のテキスト送信。
 - 実行: リポジトリ直下で `python -m unittest`（`.env` の `USER` などが読める状態で、Python 3.10+ と依存パッケージが必要）。
   - 現在の `venv/` は Python 3.9 で依存も未インストールのため、そのままでは失敗する。
 
