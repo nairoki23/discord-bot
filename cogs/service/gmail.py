@@ -12,14 +12,18 @@ from dotenv import dotenv_values
 config = dotenv_values(".env")
 TARGET_CHANNNEL_ID = get_channel_id("notification_channel_id")
 CREDIT_CARD_THREAD_ID = get_channel_id("credit_card_thread_id")
+CAR_CHANNEL_ID = get_channel_id("car_channel_id")
 ENV_TRACK_ADDRESSES = [a.strip() for a in config.get("GMAIL_TRACK_ADDRESSES", "").split(",") if a.strip()]
 
 HANDLERS = (
     handlers.my.MyHandler,
-    handlers.paypay_insurance.PayPayInsuranceHandler,
     handlers.rakuten_ticket.RakutenTicketHandler,
     handlers.eplus.EplusHandler,
     handlers.paypay_fleamarket.PayPayFleamarketHandler,
+)
+CAR_HANDLERS = (
+    handlers.paypay_insurance.PayPayInsuranceHandler,
+    handlers.times_car.TimesCarHandler,
 )
 
 class GmailCog(commands.Cog):
@@ -64,6 +68,9 @@ class GmailCog(commands.Cog):
             sender = await self.sender()
             for handler_class in HANDLERS:
                 self.service.set_handler(handler_class(sender))
+            car_sender = await self.sender(CAR_CHANNEL_ID or TARGET_CHANNNEL_ID)
+            for handler_class in CAR_HANDLERS:
+                self.service.set_handler(handler_class(car_sender))
             credit_card_sender = await self.sender(
                 CREDIT_CARD_THREAD_ID or TARGET_CHANNNEL_ID
             )
