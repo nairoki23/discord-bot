@@ -114,7 +114,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 - `tests/test_rakuten_ticket_handler.py`: 楽天チケットの抽選申込・抽選結果（落選／当選）の解析結果と Embed、個人情報を載せないこと、未対応件名のテキスト送信。
 - `tests/test_eplus_handler.py`: イープラスの申込完了・当選・落選の解析結果（全角の正規化、希望ごとの結果、料金内訳の除外）と Embed、未対応件名のテキスト送信。
 - `tests/test_paypay_fleamarket_handler.py`: Yahoo!フリマの取引メッセージ・購入・発送通知の解析結果と Embed（計測用クエリを外したリンク）、未対応件名のテキスト送信。
-- `tests/test_times_car_handler.py`: Times CAR の予約登録・予約取消通知の解析結果と Embed、未対応件名のテキスト送信。
+- `tests/test_times_car_handler.py`: Times CAR の予約登録・変更・取消、返却確認、返却証（ペナルティは発生時のみ）、給油割引の解析結果と Embed（受信日時のタイムスタンプ）、氏名を載せないこと、通知しない件名（認証コード・アプリ解施錠登録・入会関連）、未対応件名のテキスト送信。
 - 実行: リポジトリ直下で `python -m unittest`（`.env` の `USER` などが読める状態で、Python 3.10+ と依存パッケージが必要）。
   - 現在の `venv/` は Python 3.9 で依存も未インストールのため、そのままでは失敗する。
 
