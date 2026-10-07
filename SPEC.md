@@ -1,6 +1,6 @@
 # discord-bot 仕様書
 
-個人用 Discord Bot。学校の授業予定、Google Calendar、Gmail 通知（カード利用通知、PayPayほけん、楽天チケット、イープラス、Yahoo!フリマなど）、宅配便追跡、Y!mobile のデータ残量確認、タイマーなど、身の回りの情報を Discord に集約する。
+個人用 Discord Bot。学校の授業予定、Google Calendar、Gmail 通知（カード利用通知、PayPayほけん、楽天チケット、イープラス、Yahoo!フリマ、Times CAR など）、宅配便追跡、Y!mobile のデータ残量確認、タイマーなど、身の回りの情報を Discord に集約する。
 
 > この文書は 2026-09-26 時点のコード（`main` / `96acb65`）から読み取った現状の仕様。
 > 「こうあるべき」ではなく「今こう動いている」を書いている。意図と違う箇所は [既知の問題・要確認](#既知の問題要確認) を参照。
@@ -45,7 +45,7 @@
 |---|---|---|
 | `notification_channel_id` | 通知の送信先チャンネル（Gmail 通知、明日の予定） | `cogs/service/gmail.py`, `cogs/calendar.py` |
 | `credit_card_thread_id` | カード利用通知の送信先（未設定なら `notification_channel_id`） | `cogs/service/gmail.py` |
-| `car_channel_id` | car チャンネル（未使用・予約） | なし |
+| `car_channel_id` | PayPayほけん・Times CAR 通知の送信先（未設定なら `notification_channel_id`） | `cogs/service/gmail.py` |
 
 ---
 
@@ -68,6 +68,8 @@ utils/                  共通ユーティリティ
   check_user.py         実行権限チェック
   debug.py              Webhook へのデバッグ送信
   gmail_handlers/       Gmail 受信メールの処理ハンドラ群
+scripts/                単体で実行する運用スクリプト（リポジトリ直下で実行）
+  clear_commands.py     登録済みスラッシュコマンドの全削除（開発終了時用）
 tests/                  unittest
 private/                非公開モジュール（private リポジトリの git submodule。未取得なら空）
   cogs/                 main.py が自動ロード（private.cogs.xxx）
@@ -85,6 +87,14 @@ private/                非公開モジュール（private リポジトリの gi
    - `_` で始まるファイルはスキップ。
    - ロード失敗は `print` するだけで起動は継続。
 5. `private/cogs` のロードで増えたコマンドをグローバルから外して `MAIN_GUILD` に付け替え、`tree.sync()`（グローバル同期: public）と `tree.sync(guild=MAIN_GUILD)`（ギルド同期: private）を実行。
+
+### 2.1.1 スラッシュコマンドの全削除（`scripts/clear_commands.py`）
+
+開発用 Bot などで登録したスラッシュコマンドを Discord から消す。Bot は起動せず、`.env` の `DISCORD_TOKEN` でログインして HTTP API だけで削除する。
+
+- `python scripts/clear_commands.py`: グローバルと参加中の全ギルドの登録済みコマンドを一覧表示し、確認してから削除。
+- `-y` / `--yes`: 確認なしで削除。
+- 削除は空のコマンド一覧を `tree.sync()` することで行う。`main.py` を起動すると再登録される。
 
 ### 2.2 サービスコンテナ（`service/container.py`）
 
@@ -109,6 +119,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 
 - `tests/test_google_calendar.py`: Calendar サービス（週範囲、イベント解析、作成、バリデーション、コンテナの共有）と `parse_local_datetime` / `format_events`。Google API は Fake で差し替え。
 - `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、対象外件名の無視。
+- `tests/test_clear_commands.py`: コマンド全削除スクリプトの対象収集（未登録の場所は除外）と、対象ごとの clear + sync。CommandTree は Fake で差し替え。
 - private のテストは `private/tests/` に置き、`python -m unittest discover -s private/tests -t .` で実行。
 - `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、カードごとの色、通知後の既読付け、対象外件名の無視。
 - `tests/test_paypay_insurance_handler.py`: PayPayほけんの加入完了・終了予定通知の解析結果と Embed、未対応件名のテキスト送信。
@@ -116,6 +127,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 - `tests/test_eplus_handler.py`: イープラスの申込完了・当選・落選の解析結果（全角の正規化、希望ごとの結果、料金内訳の除外）と Embed、未対応件名のテキスト送信。
 - `tests/test_paypay_fleamarket_handler.py`: Yahoo!フリマの取引メッセージ・購入・発送通知の解析結果と Embed（計測用クエリを外したリンク）、未対応件名のテキスト送信。
 - `tests/test_alarm.py`: アラームの日時指定の解析（時刻・日付・和暦・全角・不正入力）と通知時刻の計算（未指定欄の補完、`*` の繰り返しと終了、存在しない日付）。
+- `tests/test_times_car_handler.py`: Times CAR の予約登録・変更・取消、返却確認、返却証（ペナルティは発生時のみ）、給油割引の解析結果と Embed（受信日時のタイムスタンプ）、氏名を載せないこと、通知しない件名（認証コード・アプリ解施錠登録・入会関連）、未対応件名のテキスト送信。
 - 実行: リポジトリ直下で `python -m unittest`（`.env` の `USER` などが読める状態で、Python 3.10+ と依存パッケージが必要）。
   - 現在の `venv/` は Python 3.9 で依存も未インストールのため、そのままでは失敗する。
 
