@@ -22,4 +22,4 @@ asyncio ベースのジョブスケジューラ。`TimerService`（`timer.py`）
 - 状態はメモリ上のみ。Bot を再起動するとジョブはすべて消える。
 - 完了・キャンセルされたジョブは `jobs` から即削除されるので、終了後に `get_status` すると `None`。
 - 時刻は naive datetime（ローカル時刻）前提。timezone 付きの `datetime` を渡すと `datetime.now()` との減算で落ちる。
-- 利用箇所: `cogs/timer.py`（`/timer`）、`cogs/calendar.py`（明日の予定通知）、`func/tracking/track.py`（追跡の定期取得）。
+- 利用箇所: `cogs/timer.py`（`/timer`）、`cogs/alarm.py`（`/alarm`）、`cogs/calendar.py`（明日の予定通知）、`func/tracking/track.py`（追跡の定期取得）。
