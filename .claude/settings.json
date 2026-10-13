@@ -8,33 +8,13 @@
     ],
     "ask": [
       "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git fetch *)",
+      "Bash(git submodule add *)",
+      "Bash(git submodule update *)",
       "Bash(git reset --hard *)",
       "Bash(sudo *)",
       "Bash(systemctl *)"
     ]
-  },
-  "sandbox": {
-    "enabled": true,
-    "autoAllowBashIfSandboxed": true,
-    "allowUnsandboxedCommands": false,
-    "excludedCommands": [
-      "git push *"
-    ],
-    "filesystem": {
-      "denyRead": [
-        "./.env",
-        "./.gcp_keys"
-      ]
-    },
-    "network": {
-      "allowedDomains": [
-        "pypi.org",
-        "files.pythonhosted.org"
-      ],
-      "deniedDomains": [
-        "github.com",
-        "*.github.com"
-      ]
-    }
   }
 }
