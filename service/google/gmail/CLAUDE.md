@@ -43,4 +43,5 @@ python -m service.google.gmail.test_message <message-id>
 ```
 
 - 本番と同じ handler を登録し、送信先を `DEBUG_WEBHOOK` に差し替えて実行する（本番チャンネルには送られない）。
-- 実際の Gmail アカウントを読むので、実行はユーザーに任せる。
+- `--list` は読み取りのみ（handler 実行・既読化なし）なので、メールの確認を頼まれたら Claude が実行してよい。
+- message ID 指定は handler を実行する（`DEBUG_WEBHOOK` への送信や、`CreditCardHandler` による既読化が起きうる）ので、実行前にユーザーに確認する。
