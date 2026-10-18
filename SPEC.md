@@ -33,6 +33,8 @@
 | `GOOGLE_OAUTH_REDIRECT_URI` | OAuth リダイレクト先（既定 `https://nairoki.dev`） | 同上 |
 | `GOOGLE_CALENDAR_ID` | `/calendar_add` の登録先（既定 `primary`） | `service/container.py` |
 | `GOOGLE_CALENDAR_TIMEZONE` | カレンダーのタイムゾーン（既定 `Asia/Tokyo`） | `cogs/calendar.py`, `service/container.py` |
+| `WEATHER_LATITUDE` / `WEATHER_LONGITUDE` | 天気予報の地点。どちらか未設定なら天気通知と `/weather` は無効 | `cogs/weather.py` |
+| `WEATHER_LOCATION_NAME` | 天気予報の見出しに付ける地点名（任意） | 同上 |
 | `DEBUG_WEBHOOK` | デバッグ送信用 Webhook（Gmail handler のテストスクリプトで使用） | `utils/debug.py` |
 
 ### 1.2 チャンネル / スレッド ID（`channels.json`）
@@ -46,6 +48,7 @@
 | `notification_channel_id` | 通知の送信先チャンネル（Gmail 通知、明日の予定） | `cogs/service/gmail.py`, `cogs/calendar.py` |
 | `credit_card_thread_id` | カード利用通知の送信先（未設定なら `notification_channel_id`） | `cogs/service/gmail.py` |
 | `car_channel_id` | PayPayほけん・Times CAR 通知の送信先（未設定なら `notification_channel_id`） | `cogs/service/gmail.py` |
+| `weather_channel_id` | 天気予報の送信先（未設定なら `notification_channel_id`） | `cogs/weather.py` |
 
 ---
 
@@ -58,6 +61,7 @@ cogs/                   Discord との接点（コマンド・イベントリス
 func/                   機能ごとのドメインロジック。Discordに依存しない、serviceに依存する（スクレイピング、予定計算など）
   alarm/                アラームの日時指定の解析と次回通知時刻の計算
   class_schedule/       授業日程 JSON とその計算
+  weather/              天気予報（Open-Meteo）の取得と整形
   tracking/             宅配追跡（fetch/ = 業者別スクレイパ, model/ = データ型）
   ymobile/              Y!mobile マイページのスクレイピング
 service/                長寿命のサービス。service同士依存しない。（シングルトン）
@@ -112,8 +116,20 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 ### 2.3 権限チェック
 
 `utils/check_user.interaction_user(interaction)` が `USER` に含まれるユーザーかを判定し、含まれなければ「実行権限がありません」を ephemeral で返して `False`。
-付いているコマンド: `/today` `/calendar_week` `/calendar_add` `/usage` `/google_auth` `/gmail_*` 全部、`/status`。
+付いているコマンド: `/today` `/calendar_week` `/weather` `/calendar_add` `/usage` `/google_auth` `/gmail_*` 全部、`/status`。
 **付いていない**コマンド: `/ping` `/class` 系 `/timer` 系 `/alarm` 系 `/tracking` 系 `/spending`。
+
+## 3. 天気予報（`cogs/weather.py`, `func/weather/`）
+
+Open-Meteo（API キー不要）から `WEATHER_LATITUDE` / `WEATHER_LONGITUDE` 地点の予報を取得する。タイムゾーンは `Asia/Tokyo` 固定。数値は整数に四捨五入して表示する。
+
+降水確率は Open-Meteo のアンサンブル予報（約 25km 格子、複数メンバー）のうち、その 1 時間（表示時刻の直前 1 時間）に 0.1mm 以上の降水を予測したメンバーの割合。日別の値は 1 時間ごとの最大値。気象庁の降水確率（6 時間に 1mm 以上）とは定義が違う。
+
+- 毎晩 22:00 に「明日の天気」を送る: 日別サマリー（天気・最高/最低気温・降水確率）と、0〜23 時の 1 時間ごとの気温・降水確率・天気。
+- 日曜 22:00 は、その前に「来週の天気」（月〜日の最高/最低気温・降水確率・天気）も送る。
+- 送信先は `weather_channel_id`（未設定なら `notification_channel_id`）。どちらも未設定、または地点未設定なら通知しない。
+- 取得失敗は `print` して次の日の通知に回す（リトライなし）。
+- `/weather [今日|明日|週間]`: 同じ内容をその場で表示（既定は明日。週間は明日から 7 日間）。
 
 ## 4. テスト
 
@@ -127,6 +143,7 @@ Calendar と Gmail は同じ `GoogleAuth` を共有するので、一度の OAut
 - `tests/test_eplus_handler.py`: イープラスの申込完了・当選・落選の解析結果（全角の正規化、希望ごとの結果、料金内訳の除外）と Embed、未対応件名のテキスト送信。
 - `tests/test_paypay_fleamarket_handler.py`: Yahoo!フリマの取引メッセージ・購入・発送通知の解析結果と Embed（計測用クエリを外したリンク）、未対応件名のテキスト送信。
 - `tests/test_alarm.py`: アラームの日時指定の解析（時刻・日付・和暦・全角・不正入力）と通知時刻の計算（未指定欄の補完、`*` の繰り返しと終了、存在しない日付）。
+- `tests/test_weather.py`: 天気予報のリクエスト引数、レスポンスの解析（欠損値）、時間別・週間・日別サマリーの整形、天気コードの表示。
 - `tests/test_times_car_handler.py`: Times CAR の予約登録・変更・取消、返却確認、返却証（ペナルティは発生時のみ）、給油割引の解析結果と Embed（受信日時のタイムスタンプ）、氏名を載せないこと、通知しない件名（認証コード・アプリ解施錠登録・入会関連）、未対応件名のテキスト送信。
 - 実行: リポジトリ直下で `python -m unittest`（`.env` の `USER` などが読める状態で、Python 3.10+ と依存パッケージが必要）。
   - 現在の `venv/` は Python 3.9 で依存も未インストールのため、そのままでは失敗する。

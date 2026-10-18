@@ -38,7 +38,7 @@ utils/    共通ユーティリティ（権限チェック、デバッグ送信�
 - 非公開にしたい Cog / ロジックは `private/`（private リポジトリの git submodule）に置く。`private/cogs/` は `main.py` が自動ロードする。取り扱い手順は `submodule.md`。
 - 依存は private → public の一方向のみ。public 側から `private` を import しない。
 - 非公開機能の名前や仕様を public 側（SPEC.md・CLAUDE.md・`.env.example`・コミットメッセージ・PR）に書かない。private 側のルールは `private/CLAUDE.md`。
-- private を変更したら、private 側でコミットしてから public 側で `git add private` してポインタを更新する。github.com へは接続できないので、push や `submodule update --init` はユーザーに頼む。
+- private を変更したら、private 側でコミットしてから public 側で `git add private` してポインタを更新する。github.com との通信（push / pull / fetch / `submodule update --init` など）はユーザーに頼む。
 
 ## Cog を追加するとき
 

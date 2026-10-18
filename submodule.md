@@ -129,5 +129,5 @@ sudo systemctl restart discordbot
 
 ## Claude Code で作業するとき
 
-- サンドボックス設定で github.com への通信が拒否されているため、Claude は `submodule add` / `update --init` / `pull` / `push` を実行できない。これらは自分で実行する（Claude Code 上なら `! git ...`）。
+- github.com と通信する操作（`submodule add` / `update --init` / `pull` / `fetch` / `push`）は Claude には実行させず、自分で実行する（Claude Code 上なら `! git ...`）。Claude が実行しようとすると `.claude/settings.json` の `ask` で確認が出る。
 - Claude は `private/` 内のファイルを読み書きできる。private 側の作業ルールは `private/CLAUDE.md` に書く。
