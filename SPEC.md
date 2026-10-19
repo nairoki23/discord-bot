@@ -23,7 +23,7 @@
 |---|---|---|
 | `DISCORD_TOKEN` | Bot トークン | `main.py` |
 | `MAIN_GUILD` | メインのギルド ID。`private/cogs` のコマンドはこのギルドにのみ登録する（未設定なら登録しない。後述） | `main.py` |
-| `USER` | カンマ区切りのユーザー ID。**コマンド実行許可ユーザー** かつ **BAN 対象** の両方に使われている（要確認） | `utils/check_user.py`, `cogs/ban.py`, `cogs/data_usage.py` |
+| `USER` | カンマ区切りのユーザー ID。**コマンド実行許可ユーザー** かつ **BAN 対象** の両方に使われている（要確認） | `utils/check_user.py`, `cogs/ban.py` |
 | `PHONE_NUMBER` / `YMOBILE_PASSWORD` | Y!mobile ログイン情報 | `cogs/data_usage.py` |
 | `GMAIL_TRACK_ADDRESSES` | 起動時に自動で追跡するメールアドレス（カンマ区切り） | `cogs/service/gmail.py` |
 | `GCP_PROJECT_ID` / `GCP_TOPIC_ID` / `GCP_SUBSCRIPTION_ID` | Gmail watch → Pub/Sub の設定 | `service/google/gmail/service.py` |
