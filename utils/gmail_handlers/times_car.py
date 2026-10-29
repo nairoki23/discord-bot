@@ -24,6 +24,7 @@ SUBJECT_KINDS = {
     "返却確認": "返却確認",
     "返却証": "返却証",
     "給油割引が適用されました": "給油割引",
+    "予約車両が利用できない可能性があります": "利用不可",
 }
 # 通知しない件名（「【Times CAR】」を除いた部分）
 IGNORED_SUBJECTS = {
@@ -76,6 +77,16 @@ class TimesCarHandler(BaseHandler):
         return sections
 
     @staticmethod
+    def _bracket_items(text):
+        """「【項目名】値」の行を {項目名: 値} で返す（利用不可の連絡メールの形式）。"""
+        items = {}
+        for line in text.splitlines():
+            match = re.fullmatch(r"\s*【([^】]+)】(.+)", line)
+            if match:
+                items.setdefault(match.group(1), match.group(2).strip())
+        return items
+
+    @staticmethod
     def _subject_body(subject):
         return subject.removeprefix("【Times CAR】").strip()
 
@@ -101,10 +112,10 @@ class TimesCarHandler(BaseHandler):
 
     @staticmethod
     def _period(value):
-        """「2026/10/06 11:45 - 2026/10/06 12:56」の同じ日付を省いて短くする。"""
-        match = re.fullmatch(r"(\S+) (\S+) - (\S+) (\S+)", value)
-        if match and match.group(1) == match.group(3):
-            return f"{match.group(1)} {match.group(2)} - {match.group(4)}"
+        """「2026/10/06 11:45 - 2026/10/06 12:56」（区切りは「～」も可）の同じ日付を省いて短くする。"""
+        match = re.fullmatch(r"(\S+) (\S+) ([-～〜]) (\S+) (\S+)", value)
+        if match and match.group(1) == match.group(4):
+            return f"{match.group(1)} {match.group(2)} {match.group(3)} {match.group(5)}"
         return value
 
     def _parse(self, subject, text):
@@ -112,17 +123,19 @@ class TimesCarHandler(BaseHandler):
         if kind is None:
             return None
         sections = self._sections(text)
+        brackets = self._bracket_items(text)
 
         def first(label):
-            return (sections.get(label) or [""])[0]
+            return (sections.get(label) or [""])[0] or brackets.get(label, "")
 
         station_lines = sections.get("ステーション", [])
         return {
             "kind": kind,
             "number": first("予約番号"),
-            "station": station_lines[0] if station_lines else "",
+            "station": station_lines[0] if station_lines else brackets.get("ステーション", ""),
             "station_url": next((l for l in station_lines[1:] if l.startswith("https://")), None),
             "car": first("車両"),
+            "reserved": brackets.get("予約日時", ""),
             "start": first("利用開始日時"),
             "end": first("返却予定日時"),
             "duration": first("利用予定時間"),
@@ -208,6 +221,26 @@ class TimesCarHandler(BaseHandler):
                 ("予約番号", n["number"]),
             ])
             return "✅", embed
+
+        if kind == "利用不可":
+            reserved = self._period(n["reserved"])
+            start = reserved.split(" ", 2)
+            if len(start) == 3:
+                reserved = f"{self._with_relative(' '.join(start[:2]))} {start[2]}"
+            embed = Embed(
+                title="予約車両が利用できない可能性",
+                description=f"{station}の予約車両が利用できない可能性があります",
+                color=Color.red(),
+                url=RESERVATION_LIST_URL,
+            )
+            self._add_fields(embed, [
+                ("予約日時", reserved or "不明"),
+                self._station_field(n),
+                ("車両", n["car"]),
+                ("予約番号", n["number"]),
+                ("対応", "別車両への予約変更をお願いします（アプリからは取消して別車両で再予約）"),
+            ])
+            return "⚠️", embed
 
         amount = n["fuel_discount"] or n["total_discount"]
         description = f"給油割引（{amount}）が適用されました" if amount else "給油割引が適用されました"

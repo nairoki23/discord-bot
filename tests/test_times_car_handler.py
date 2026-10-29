@@ -341,3 +341,56 @@ class TimesCarOtherNotificationTests(TimesCarTestCase):
         ):
             with self.subTest(subject=subject):
                 self.assertEqual(await self.handle(subject, text_payload("本文")), [])
+
+
+UNAVAILABLE_BODY = """【Times CAR】
+連絡メール
+
+テスト太郎 様
+
+ご予約車両に事故・故障等による緊急トラブルが発生したため、貸出を見合わせており、車両確認対応中につき、現時点でご予約当日に予定通りご利用いただけない可能性がございます。
+
+つきましては、マイページの「予約確認・変更・取消」より別車両への予約変更にご協力をお願いいたします。
+【URL】https://share.timescar.jp/view/sp/reserve/list.jsp
+
+▼該当のご予約▼
+【ステーション】テスト駅前
+【車両】フィット（ハイブリッド） （品川 500 あ 1234:シルバー）
+【予約番号】123456789
+【予約日時】2026/11/01 22:15 ～ 2026/11/01 23:45
+
+【フリーダイヤル】
+0120-00-0000（24時間受付）
+"""
+
+
+class TimesCarUnavailableTests(TimesCarTestCase):
+    async def test_unavailable_shows_reservation_and_action(self):
+        message = await self.send(
+            "【Times CAR】予約車両が利用できない可能性があります", text_payload(UNAVAILABLE_BODY)
+        )
+
+        embed = message["embed"]
+        self.assertEqual(message["content"], "⚠️ テスト駅前の予約車両が利用できない可能性があります")
+        self.assertEqual(embed.title, "予約車両が利用できない可能性")
+        self.assertEqual(embed.url, RESERVATION_LIST_URL)
+        # 2026/11/01 22:15 JST = 2026-11-01T13:15:00Z
+        self.assertEqual([(field.name, field.value) for field in embed.fields], [
+            ("予約日時", "2026/11/01 22:15（<t:1793538900:R>） ～ 23:45"),
+            ("ステーション", "テスト駅前"),
+            ("車両", "フィット（ハイブリッド） （品川 500 あ 1234:シルバー）"),
+            ("予約番号", "123456789"),
+            ("対応", "別車両への予約変更をお願いします（アプリからは取消して別車両で再予約）"),
+        ])
+
+    async def test_unavailable_does_not_send_personal_name(self):
+        message = await self.send(
+            "【Times CAR】予約車両が利用できない可能性があります", text_payload(UNAVAILABLE_BODY)
+        )
+
+        embed = message["embed"]
+        sent_text = " ".join(
+            [message["content"], embed.description]
+            + [f"{field.name} {field.value}" for field in embed.fields]
+        )
+        self.assertNotIn("テスト太郎", sent_text)
