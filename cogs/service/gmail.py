@@ -21,6 +21,7 @@ HANDLERS = (
     handlers.eplus.EplusHandler,
     handlers.paypay_fleamarket.PayPayFleamarketHandler,
     handlers.hellocycling.HelloCyclingHandler,
+    handlers.inforich.InforichHandler,
 )
 CAR_HANDLERS = (
     handlers.paypay_insurance.PayPayInsuranceHandler,
