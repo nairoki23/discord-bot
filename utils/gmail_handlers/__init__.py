@@ -6,3 +6,4 @@ from . import rakuten_ticket
 from . import eplus
 from . import paypay_fleamarket
 from . import times_car
+from . import hellocycling
