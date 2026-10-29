@@ -8,3 +8,4 @@ from . import paypay_fleamarket
 from . import times_car
 from . import hellocycling
 from . import inforich
+from . import toyoko_inn

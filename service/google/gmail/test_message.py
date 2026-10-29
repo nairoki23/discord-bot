@@ -30,6 +30,7 @@ def register_handlers(service):
     service.set_handler(handlers.times_car.TimesCarHandler(send))
     service.set_handler(handlers.hellocycling.HelloCyclingHandler(send))
     service.set_handler(handlers.inforich.InforichHandler(send))
+    service.set_handler(handlers.toyoko_inn.ToyokoInnHandler(send))
     for address in handlers.credit_card.CreditCardHandler.ADDRESSES:
         service.set_handler(
             handlers.credit_card.CreditCardHandler(send, address, service.mark_as_read)

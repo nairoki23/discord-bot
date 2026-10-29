@@ -22,6 +22,7 @@ HANDLERS = (
     handlers.paypay_fleamarket.PayPayFleamarketHandler,
     handlers.hellocycling.HelloCyclingHandler,
     handlers.inforich.InforichHandler,
+    handlers.toyoko_inn.ToyokoInnHandler,
 )
 CAR_HANDLERS = (
     handlers.paypay_insurance.PayPayInsuranceHandler,
