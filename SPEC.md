@@ -133,6 +133,7 @@ Open-Meteo（API キー不要）から `WEATHER_LATITUDE` / `WEATHER_LONGITUDE` 
 
 ## 4. テスト
 
+- `tests/test_gmail_process.py`: Gmail の既読付け・疎通確認、handler の振り分け（完全一致・部分一致・完全一致優先・最長一致・空アドレスの扱い）と登録一覧。
 - `tests/test_google_calendar.py`: Calendar サービス（週範囲、イベント解析、作成、バリデーション、コンテナの共有）と `parse_local_datetime` / `format_events`。Google API は Fake で差し替え。
 - `tests/test_credit_card_handler.py`: 3 社のカード通知の解析結果と Embed レイアウト、対象外件名の無視。
 - `tests/test_clear_commands.py`: コマンド全削除スクリプトの対象収集（未登録の場所は除外）と、対象ごとの clear + sync。CommandTree は Fake で差し替え。

@@ -45,9 +45,14 @@ class FakeApi:
 
 
 class FakeHandler:
-    def __init__(self, address, sender="sender"):
+    def __init__(self, address, sender="sender", partial_match=False):
         self.address = address
         self.sender = sender
+        self.partial_match = partial_match
+        self.handled = []
+
+    async def handle(self, details):
+        self.handled.append(details)
 
 
 class GmailProcessMarkAsReadTests(unittest.TestCase):
@@ -95,8 +100,77 @@ class GmailProcessHandlerAddressesTests(unittest.TestCase):
 
         self.assertEqual(
             process.handler_addresses(),
-            [("a@example.com", "FakeHandler"), ("", "FakeHandler")],
+            [("a@example.com", "FakeHandler", False), ("", "FakeHandler", False)],
         )
+
+    def test_handler_addresses_marks_partial_match_handlers(self):
+        process = GmailProcess(lambda: FakeApi(FakeMessagesResource()))
+        process.set_handler(FakeHandler("@example.com", partial_match=True))
+
+        self.assertEqual(process.handler_addresses(), [("@example.com", "FakeHandler", True)])
+
+
+class GmailProcessFindHandlerTests(unittest.TestCase):
+    def setUp(self):
+        self.process = GmailProcess(lambda: FakeApi(FakeMessagesResource()))
+
+    def register(self, address, partial_match=False):
+        handler = FakeHandler(address, partial_match=partial_match)
+        self.assertTrue(self.process.set_handler(handler))
+        return handler
+
+    def test_exact_match_requires_whole_address(self):
+        handler = self.register("a@example.com")
+
+        self.assertIs(self.process.find_handler("a@example.com"), handler)
+        self.assertIsNone(self.process.find_handler("b@example.com"))
+        self.assertIsNone(self.process.find_handler("xa@example.com"))
+
+    def test_partial_match_finds_address_containing_pattern(self):
+        handler = self.register("@example.com", partial_match=True)
+
+        self.assertIs(self.process.find_handler("a@example.com"), handler)
+        self.assertIs(self.process.find_handler("noreply@example.com"), handler)
+        self.assertIsNone(self.process.find_handler("a@example.org"))
+
+    def test_partial_match_ignores_case(self):
+        handler = self.register("@Example.com", partial_match=True)
+
+        self.assertIs(self.process.find_handler("A@EXAMPLE.COM"), handler)
+
+    def test_exact_match_takes_priority_over_partial_match(self):
+        self.register("@example.com", partial_match=True)
+        exact = self.register("a@example.com")
+
+        self.assertIs(self.process.find_handler("a@example.com"), exact)
+
+    def test_longest_partial_match_wins(self):
+        self.register("example.com", partial_match=True)
+        specific = self.register("@mail.example.com", partial_match=True)
+
+        self.assertIs(self.process.find_handler("a@mail.example.com"), specific)
+
+    def test_empty_partial_match_is_rejected(self):
+        self.assertFalse(self.process.set_handler(FakeHandler("", partial_match=True)))
+        self.assertIsNone(self.process.find_handler("a@example.com"))
+
+    def test_empty_exact_handler_does_not_match_every_address(self):
+        self.register("")
+
+        self.assertIsNone(self.process.find_handler("a@example.com"))
+
+
+class GmailProcessProcessMessageTests(unittest.IsolatedAsyncioTestCase):
+    async def test_process_message_calls_partial_match_handler(self):
+        process = GmailProcess(lambda: FakeApi(FakeMessagesResource()))
+        handler = FakeHandler("@example.com", partial_match=True)
+        process.set_handler(handler)
+        details = {"id": "msg-1", "from": "Example <noreply@example.com>"}
+        process.get_mail_details = lambda msg_id: details
+
+        await process.process_message("msg-1")
+
+        self.assertEqual(handler.handled, [details])
 
 
 if __name__ == "__main__":

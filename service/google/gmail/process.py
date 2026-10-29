@@ -17,8 +17,27 @@ class GmailProcess:
             or handler.sender is None
         ):
             return False
+        # 空文字の部分一致はすべてのメールに一致してしまうので登録しない
+        if self._is_partial(handler) and not handler.address:
+            return False
         self.handler[handler.address] = handler
         return True
+
+    @staticmethod
+    def _is_partial(handler):
+        return getattr(handler, "partial_match", False)
+
+    def find_handler(self, address):
+        """送信元アドレスを扱う handler。完全一致を優先し、なければ最も長い部分一致。"""
+        handler = self.handler.get(address)
+        if handler is not None and not self._is_partial(handler):
+            return handler
+        lowered = address.lower()
+        partials = [
+            handler for handler in self.handler.values()
+            if self._is_partial(handler) and handler.address.lower() in lowered
+        ]
+        return max(partials, key=lambda handler: len(handler.address), default=None)
 
     def del_handler(self, address):
         del self.handler[address]
@@ -27,8 +46,11 @@ class GmailProcess:
         return sum(1 for handler in self.handler.values() if handler.sender is not None)
 
     def handler_addresses(self):
-        """登録済み handler の (アドレス, handlerクラス名) 一覧。"""
-        return [(address, type(handler).__name__) for address, handler in self.handler.items()]
+        """登録済み handler の (アドレス, handlerクラス名, 部分一致か) 一覧。"""
+        return [
+            (address, type(handler).__name__, self._is_partial(handler))
+            for address, handler in self.handler.items()
+        ]
 
     def verify_connection(self):
         """Gmail APIへ実際にリクエストして疎通を確認する。
@@ -84,9 +106,9 @@ class GmailProcess:
         details = self.get_mail_details(msg_id)
         if not details:
             return None
-        address = parseaddr(details["from"])[1]
-        if address in self.handler:
-            await self.handler[address].handle(details)
+        handler = self.find_handler(parseaddr(details["from"])[1])
+        if handler is not None:
+            await handler.handle(details)
         if len(self.msg_ids) > 100:
             self.msg_ids.pop(0)
         return details

@@ -15,7 +15,7 @@ Gmail の新着メールを Pub/Sub で受け取り、送信元アドレスご�
 2. `start_listening()`: サービスアカウント鍵で `GCP_SUBSCRIPTION_ID` を購読。
 3. Pub/Sub の callback は **別スレッド**で呼ばれるので、`asyncio.run_coroutine_threadsafe` で Bot のループに渡す（`GmailService.callback`）。
 4. `sub_callback`: 即 ack → 前回の `historyId` から `history.list`（`messageAdded`）で差分取得。
-5. `process_message`: 処理済み ID（直近 100 件）は飛ばす → `messages.get` で詳細取得 → `From` のアドレスが一致する handler の `handle(details)` を呼ぶ。
+5. `process_message`: 処理済み ID（直近 100 件）は飛ばす → `messages.get` で詳細取得 → `find_handler` で `From` のアドレスに対応する handler を 1 つ選び `handle(details)` を呼ぶ。
 
 ## handler
 
@@ -23,6 +23,9 @@ Gmail の新着メールを Pub/Sub で受け取り、送信元アドレスご�
   - `sender` は Discord の送信関数（`channel.send` など）。
   - `details`: `id`, `from`, `subject`, `snippet`, `is_unread`, `payload`（Gmail API の生 payload）。
 - 1 アドレスにつき handler は 1 つ。同じアドレスの再登録は `set_handler` が `False` を返す。
+- 既定は `From` のアドレスとの完全一致。`self.partial_match = True` にすると、`self.address` を含むアドレス（例: `@example.com`）を扱う（大文字小文字は区別しない）。
+  - 1 通のメールで呼ばれる handler は 1 つだけ。完全一致を優先し、なければ部分一致のうち `address` が最も長いもの。
+  - 空アドレスの部分一致は全メールに一致してしまうため、`set_handler` が `False` を返す。
 - handler の実装は `utils/gmail_handlers/` に置く（このディレクトリには置かない）。登録は `cogs/service/gmail.py` の `cog_load`。
   - 新しい handler を追加したら `test_message.py` の `register_handlers` も揃える。
 

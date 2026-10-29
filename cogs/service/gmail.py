@@ -123,8 +123,8 @@ class GmailCog(commands.Cog):
             addresses = self.service.handler_addresses()
             if addresses:
                 lines = "\n".join(
-                    f"・ {address or '(アドレス未指定・素通し用)'} — {handler_type}"
-                    for address, handler_type in addresses
+                    f"・ {address or '(アドレス未指定・素通し用)'}{'（部分一致）' if partial else ''} — {handler_type}"
+                    for address, handler_type, partial in addresses
                 )
                 embeds.append(discord.Embed(title=f"登録Handler（{len(addresses)}件）", description=lines, color=discord.Color.blue()))
             else:
